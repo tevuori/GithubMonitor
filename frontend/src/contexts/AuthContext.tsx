@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import axios from 'axios';
+import api from '../services/api';
 
 interface User {
   id: number;
@@ -40,7 +40,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const checkAuth = async () => {
     try {
-      const response = await axios.get('/auth/me');
+      const response = await api.get('/auth/me');
       setUser(response.data);
     } catch (error) {
       setUser(null);
@@ -50,12 +50,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const login = () => {
-    window.location.href = '/auth/github';
+    window.location.href = 'http://localhost:3000/auth/github';
   };
 
   const logout = async () => {
     try {
-      await axios.get('/auth/logout');
+      await api.get('/auth/logout');
       setUser(null);
     } catch (error) {
       console.error('Logout failed:', error);
