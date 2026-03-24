@@ -50,6 +50,7 @@ const Layout: React.FC = () => {
     { name: 'Issues', href: '/issues', icon: AlertCircleIcon },
     { name: 'Branches', href: '/branches', icon: GitBranchIcon },
     { name: 'Workflows', href: '/workflows', icon: BarChart3Icon },
+    { name: 'Contributors', href: '/contributors', icon: BarChart3Icon },
   ];
 
   return (

@@ -9,6 +9,7 @@ import PullRequests from './pages/PullRequests';
 import Issues from './pages/Issues';
 import Branches from './pages/Branches';
 import Workflows from './pages/Workflows';
+import Contributors from './pages/Contributors';
 import Login from './pages/Login';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 
@@ -62,6 +63,7 @@ function App() {
                 <Route path="issues" element={<Issues />} />
                 <Route path="branches" element={<Branches />} />
                 <Route path="workflows" element={<Workflows />} />
+                <Route path="contributors" element={<Contributors />} />
               </Route>
             </Routes>
           </div>

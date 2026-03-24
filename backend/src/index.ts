@@ -13,7 +13,7 @@ import branchRoutes from './routes/branches';
 import issueRoutes from './routes/issues';
 import pullRoutes from './routes/pulls';
 import workflowRoutes from './routes/workflows';
-
+import statsRoutes from './routes/stats';
 
 // Load environment variables
 dotenv.config();
@@ -181,7 +181,7 @@ app.use('/api/branches', branchRoutes);
 app.use('/api/issues', issueRoutes);
 app.use('/api/pulls', pullRoutes);
 app.use('/api/workflows', workflowRoutes);
-
+app.use('/api/stats', statsRoutes);
 
 // Start server
 httpServer.listen(PORT, () => {
