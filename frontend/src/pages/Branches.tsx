@@ -1,344 +1,189 @@
-import React, { useMemo, useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import api from '../services/api';
+import GitGraph from '../components/GitGraph';
+import type { GitGraphData } from '../types/gitGraph';
 
-interface Commit {
-  sha: string;
-  shortSha: string;
-  message: string;
-  fullMessage: string;
-  author: {
-    name: string;
-    email: string;
-    date: string;
-    avatar: string;
+interface Repository {
+  id: number;
+  name: string;
+  full_name: string;
+  owner: {
     login: string;
   };
-  parents: string[];
-  htmlUrl: string;
-  branches: string[];
 }
 
-interface Branch {
-  name: string;
-  protected: boolean;
-  headSha: string;
-  lane: number;
-}
+const Branches = () => {
+  const [selectedRepo, setSelectedRepo] = useState<Repository | null>(null);
+  const [perPage, setPerPage] = useState(50);
 
-interface GitGraphData {
-  branches: Branch[];
-  commits: Commit[];
-  branchLanes: Record<string, number>;
-  totalCommits: number;
-}
+  // Fetch user's repositories
+  const { data: repos, isLoading: reposLoading } = useQuery<Repository[]>({
+    queryKey: ['repos'],
+    queryFn: async () => {
+      const res = await api.get('/api/repos');
+      return res.data;
+    },
+  });
 
-interface GitGraphProps {
-  data: GitGraphData;
-  owner: string;
-  repo: string;
-}
-
-const BRANCH_COLORS = [
-  '#3b82f6',
-  '#22c55e',
-  '#f59e0b',
-  '#ec4899',
-  '#8b5cf6',
-  '#06b6d4',
-  '#f97316',
-  '#14b8a6',
-  '#ef4444',
-  '#6366f1',
-];
-
-const GitGraph: React.FC<GitGraphProps> = ({ data, owner, repo }) => {
-  const [selectedCommit, setSelectedCommit] = useState<Commit | null>(null);
-  const [hoveredCommit, setHoveredCommit] = useState<string | null>(null);
-
-  const commitIndex = useMemo(() => {
-    const index = new Map<string, number>();
-    data.commits.forEach((c, i) => index.set(c.sha, i));
-    return index;
-  }, [data.commits]);
-
-  const commitLanes = useMemo(() => {
-    const lanes = new Map<string, number>();
-    data.commits.forEach((commit) => {
-      const primaryBranch = commit.branches[0];
-      let lane = data.branchLanes[primaryBranch] ?? 0;
-      lane = Math.min(lane, data.branches.length - 1);
-      lanes.set(commit.sha, lane);
-    });
-    return lanes;
-  }, [data.commits, data.branchLanes, data.branches]);
-
-  const NODE_RADIUS = 6;
-  const ROW_HEIGHT = 48;
-  const LANE_WIDTH = 24;
-  const LEFT_PADDING = 16;
-  const svgWidth = Math.max(200, (data.branches.length + 1) * LANE_WIDTH + LEFT_PADDING * 2);
-
-  const getColor = (branchIndex: number) => BRANCH_COLORS[branchIndex % BRANCH_COLORS.length];
-
-  const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-    if (diffDays === 0) {
-      const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-      if (diffHours === 0) {
-        const diffMins = Math.floor(diffMs / (1000 * 60));
-        return diffMins + 'm ago';
-      }
-      return diffHours + 'h ago';
+  // Auto-select first repo
+  useEffect(() => {
+    if (repos && repos.length > 0 && !selectedRepo) {
+      setSelectedRepo(repos[0]);
     }
-    if (diffDays === 1) return 'Yesterday';
-    if (diffDays < 7) return diffDays + 'd ago';
-    if (diffDays < 30) return Math.floor(diffDays / 7) + 'w ago';
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  };
+  }, [repos, selectedRepo]);
+
+  // Fetch git graph data for selected repo
+  const { data: graphData, isLoading: graphLoading, error: graphError, refetch } = useQuery<GitGraphData>({
+    queryKey: ['gitGraph', selectedRepo?.owner.login, selectedRepo?.name, perPage],
+    queryFn: async () => {
+      if (!selectedRepo) throw new Error('No repo selected');
+      const res = await api.get(`/api/branches/${selectedRepo.owner.login}/${selectedRepo.name}/graph`, {
+        params: { perPage },
+      });
+      return res.data;
+    },
+    enabled: !!selectedRepo,
+  });
+
+  if (reposLoading) {
+    return (
+      <div className="flex items-center justify-center h-full" data-testid="branches-loading">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex flex-wrap gap-3 p-4 bg-gray-800/50 border-b border-gray-700/50">
-        {data.branches.map((branch, i) => (
-          <div key={branch.name} className="flex items-center gap-2">
-            <div
-              className="w-3 h-3 rounded-full"
-              style={{ backgroundColor: getColor(i) }}
-            />
-            <span className="text-sm text-gray-300 font-mono">{branch.name}</span>
-            {branch.protected && (
-              <span className="px-1.5 py-0.5 text-xs bg-amber-500/20 text-amber-400 rounded">protected</span>
-            )}
-          </div>
-        ))}
-      </div>
-
-      <div className="flex-1 overflow-auto">
-        <div className="flex min-h-full">
-          <svg
-            width={svgWidth}
-            height={data.commits.length * ROW_HEIGHT + 40}
-            className="flex-shrink-0"
+    <div className="h-full flex flex-col bg-gray-900" data-testid="branches-page">
+      {/* Header */}
+      <div className="flex items-center justify-between p-4 border-b border-gray-700 bg-gray-800/50">
+        <div className="flex items-center gap-4">
+          <h1 className="text-xl font-semibold text-white">Git Graph</h1>
+          
+          {/* Repository Selector */}
+          <select
+            data-testid="repo-selector"
+            className="bg-gray-700 text-gray-200 px-3 py-1.5 rounded-lg border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            value={selectedRepo?.full_name || ''}
+            onChange={(e) => {
+              const repo = repos?.find(r => r.full_name === e.target.value);
+              setSelectedRepo(repo || null);
+            }}
           >
-            <defs>
-              <filter id="glow">
-                <feGaussianBlur stdDeviation="2" result="coloredBlur" />
-                <feMerge>
-                  <feMergeNode in="coloredBlur" />
-                  <feMergeNode in="SourceGraphic" />
-                </feMerge>
-              </filter>
-            </defs>
+            {repos?.map((repo) => (
+              <option key={repo.id} value={repo.full_name}>
+                {repo.full_name}
+              </option>
+            ))}
+          </select>
+        </div>
 
-            {data.commits.map((commit, rowIndex) => {
-              const lane = commitLanes.get(commit.sha) ?? 0;
-              const x = LEFT_PADDING + lane * LANE_WIDTH + LANE_WIDTH / 2;
-              const y = rowIndex * ROW_HEIGHT + ROW_HEIGHT / 2 + 20;
-
-              return commit.parents.map((parentSha) => {
-                const parentIndex = commitIndex.get(parentSha);
-                if (parentIndex === undefined) return null;
-
-                const parentLane = commitLanes.get(parentSha) ?? 0;
-                const parentX = LEFT_PADDING + parentLane * LANE_WIDTH + LANE_WIDTH / 2;
-                const parentY = parentIndex * ROW_HEIGHT + ROW_HEIGHT / 2 + 20;
-                const branchIndex = Math.min(lane, data.branches.length - 1);
-
-                if (lane === parentLane) {
-                  return (
-                    <line
-                      key={commit.sha + '-' + parentSha}
-                      x1={x}
-                      y1={y}
-                      x2={parentX}
-                      y2={parentY}
-                      stroke={getColor(branchIndex)}
-                      strokeWidth="2"
-                      strokeOpacity="0.6"
-                    />
-                  );
-                } else {
-                  const midY = (y + parentY) / 2;
-                  return (
-                    <path
-                      key={commit.sha + '-' + parentSha}
-                      d={'M ' + x + ' ' + y + ' C ' + x + ' ' + midY + ', ' + parentX + ' ' + midY + ', ' + parentX + ' ' + parentY}
-                      fill="none"
-                      stroke={getColor(branchIndex)}
-                      strokeWidth="2"
-                      strokeOpacity="0.6"
-                    />
-                  );
-                }
-              });
-            })}
-
-            {data.commits.map((commit, rowIndex) => {
-              const lane = commitLanes.get(commit.sha) ?? 0;
-              const x = LEFT_PADDING + lane * LANE_WIDTH + LANE_WIDTH / 2;
-              const y = rowIndex * ROW_HEIGHT + ROW_HEIGHT / 2 + 20;
-              const branchIndex = Math.min(lane, data.branches.length - 1);
-              const isHead = data.branches.some((b) => b.headSha === commit.sha);
-              const isHovered = hoveredCommit === commit.sha;
-              const isSelected = selectedCommit?.sha === commit.sha;
-
-              return (
-                <g key={commit.sha}>
-                  {isHead && (
-                    <circle
-                      cx={x}
-                      cy={y}
-                      r={NODE_RADIUS + 4}
-                      fill={getColor(branchIndex)}
-                      opacity="0.3"
-                    />
-                  )}
-                  <circle
-                    cx={x}
-                    cy={y}
-                    r={isHovered || isSelected ? NODE_RADIUS + 2 : NODE_RADIUS}
-                    fill={isHead ? getColor(branchIndex) : '#1f2937'}
-                    stroke={getColor(branchIndex)}
-                    strokeWidth={isHead ? 3 : 2}
-                    style={{ cursor: 'pointer' }}
-                    onMouseEnter={() => setHoveredCommit(commit.sha)}
-                    onMouseLeave={() => setHoveredCommit(null)}
-                    onClick={() => setSelectedCommit(commit)}
-                  />
-                </g>
-              );
-            })}
-          </svg>
-
-          <div className="flex-1 min-w-0">
-            {data.commits.map((commit) => {
-              const isSelected = selectedCommit?.sha === commit.sha;
-              const isHovered = hoveredCommit === commit.sha;
-              const isHead = data.branches.some((b) => b.headSha === commit.sha);
-
-              let rowClass = 'flex items-center gap-4 px-4 border-b border-gray-800/50 cursor-pointer';
-              if (isSelected) rowClass += ' bg-blue-500/10';
-              if (isHovered && !isSelected) rowClass += ' bg-gray-800/30';
-
-              return (
-                <div
-                  key={commit.sha}
-                  className={rowClass}
-                  style={{ height: ROW_HEIGHT }}
-                  onMouseEnter={() => setHoveredCommit(commit.sha)}
-                  onMouseLeave={() => setHoveredCommit(null)}
-                  onClick={() => setSelectedCommit(commit)}
-                >
-                  {commit.author.avatar ? (
-                    <img
-                      src={commit.author.avatar}
-                      alt={commit.author.name}
-                      className="w-7 h-7 rounded-full ring-2 ring-gray-700 flex-shrink-0"
-                    />
-                  ) : (
-                    <div className="w-7 h-7 rounded-full bg-gray-700 flex items-center justify-center text-xs text-gray-400 flex-shrink-0">
-                      {commit.author.name.charAt(0).toUpperCase()}
-                    </div>
-                  )}
-
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-gray-200 truncate font-medium">{commit.message}</span>
-                      {isHead && (
-                        <span className="px-1.5 py-0.5 text-xs bg-green-500/20 text-green-400 rounded flex-shrink-0">HEAD</span>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2 text-xs text-gray-500 mt-0.5">
-                      <span className="font-mono text-blue-400">{commit.shortSha}</span>
-                      <span>·</span>
-                      <span>{commit.author.login || commit.author.name}</span>
-                      <span>·</span>
-                      <span>{formatDate(commit.author.date)}</span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-1.5 flex-shrink-0">
-                    {commit.branches.slice(0, 2).map((branch) => {
-                      const idx = data.branchLanes[branch] ?? 0;
-                      return (
-                        <span
-                          key={branch}
-                          className="px-2 py-0.5 text-xs rounded-full font-mono"
-                          style={{ backgroundColor: getColor(idx) + '20', color: getColor(idx) }}
-                        >
-                          {branch}
-                        </span>
-                      );
-                    })}
-                    {commit.branches.length > 2 && (
-                      <span className="text-xs text-gray-500">+{commit.branches.length - 2}</span>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
+        <div className="flex items-center gap-3">
+          {/* Commits per branch */}
+          <div className="flex items-center gap-2">
+            <label className="text-sm text-gray-400">Commits:</label>
+            <select
+              data-testid="commits-selector"
+              className="bg-gray-700 text-gray-200 px-2 py-1 rounded border border-gray-600 text-sm"
+              value={perPage}
+              onChange={(e) => setPerPage(Number(e.target.value))}
+            >
+              <option value={25}>25</option>
+              <option value={50}>50</option>
+              <option value={100}>100</option>
+              <option value={200}>200</option>
+            </select>
           </div>
+
+          {/* Refresh button */}
+          <button
+            data-testid="refresh-btn"
+            onClick={() => refetch()}
+            className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded-lg transition-colors flex items-center gap-2"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            Refresh
+          </button>
         </div>
       </div>
 
-      {selectedCommit && (
-        <div className="border-t border-gray-700 bg-gray-800/80 p-4">
-          <div className="flex items-start justify-between">
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-3">
-                {selectedCommit.author.avatar && (
-                  <img src={selectedCommit.author.avatar} alt={selectedCommit.author.name} className="w-10 h-10 rounded-full" />
-                )}
-                <div>
-                  <h3 className="text-base font-semibold text-gray-100">{selectedCommit.message}</h3>
-                  <p className="text-sm text-gray-400 mt-0.5">
-                    <span className="text-gray-300">{selectedCommit.author.name}</span>
-                    {selectedCommit.author.login && <span className="text-gray-500"> (@{selectedCommit.author.login})</span>}
-                    <span className="mx-2">·</span>
-                    <span>{new Date(selectedCommit.author.date).toLocaleString()}</span>
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-4 mt-3">
-                <span className="font-mono text-sm text-blue-400 bg-blue-500/10 px-2 py-1 rounded">{selectedCommit.sha}</span>
-                <span className="text-sm text-gray-500">{selectedCommit.parents.length} parent(s)</span>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2 ml-4">
-              <a
-                href={selectedCommit.htmlUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="px-3 py-1.5 text-sm bg-gray-700 hover:bg-gray-600 text-gray-200 rounded-lg"
-              >
-                View on GitHub
-              </a>
-              <a
-                href={'https://github.com/' + owner + '/' + repo + '/commit/' + selectedCommit.sha + '.diff'}
-                target="_blank"
-                rel="noreferrer"
-                className="px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-500 text-white rounded-lg"
-              >
-                View Diff
-              </a>
-              <button
-                onClick={() => setSelectedCommit(null)}
-                className="p-1.5 text-gray-400 hover:text-gray-200"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
+      {/* Stats Bar */}
+      {graphData && (
+        <div className="flex items-center gap-6 px-4 py-2 bg-gray-800/30 border-b border-gray-700/50 text-sm">
+          <div className="flex items-center gap-2">
+            <svg className="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+            <span className="text-gray-400">Branches:</span>
+            <span className="text-gray-200 font-medium" data-testid="branch-count">{graphData.branches.length}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <svg className="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span className="text-gray-400">Commits:</span>
+            <span className="text-gray-200 font-medium" data-testid="commit-count">{graphData.totalCommits}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <svg className="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+            <span className="text-gray-400">Protected:</span>
+            <span className="text-gray-200 font-medium" data-testid="protected-count">
+              {graphData.branches.filter(b => b.protected).length}
+            </span>
           </div>
         </div>
       )}
+
+      {/* Main Content */}
+      <div className="flex-1 overflow-hidden">
+        {graphLoading ? (
+          <div className="flex items-center justify-center h-full" data-testid="graph-loading">
+            <div className="flex flex-col items-center gap-4">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+              <p className="text-gray-400">Loading git graph...</p>
+            </div>
+          </div>
+        ) : graphError ? (
+          <div className="flex items-center justify-center h-full" data-testid="graph-error">
+            <div className="text-center">
+              <svg className="w-16 h-16 text-red-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <h3 className="text-lg font-medium text-gray-200 mb-2">Failed to load git graph</h3>
+              <p className="text-gray-400 mb-4">Please make sure you have access to this repository.</p>
+              <button
+                onClick={() => refetch()}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors"
+              >
+                Try Again
+              </button>
+            </div>
+          </div>
+        ) : graphData && selectedRepo ? (
+          <GitGraph
+            data={graphData}
+            owner={selectedRepo.owner.login}
+            repo={selectedRepo.name}
+          />
+        ) : (
+          <div className="flex items-center justify-center h-full" data-testid="no-repo">
+            <div className="text-center">
+              <svg className="w-16 h-16 text-gray-600 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+              </svg>
+              <h3 className="text-lg font-medium text-gray-200 mb-2">No Repository Selected</h3>
+              <p className="text-gray-400">Select a repository to view its git graph.</p>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
 
-export default GitGraph;
+export default Branches;

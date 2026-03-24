@@ -10,7 +10,8 @@ const requireAuth = (req: Request, res: Response, next: any) => {
 router.get('/:owner/:repo', requireAuth, async (req: Request, res: Response) => {
   try {
     const user = req.user as any;
-    const { owner, repo } = req.params;
+    const owner = String(req.params.owner);
+    const repo = String(req.params.repo);
     const runs = await getRepoWorkflowRuns(user.accessToken, owner, repo);
     res.json(runs);
   } catch (err) {

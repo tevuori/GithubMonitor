@@ -24,7 +24,8 @@ router.get('/', requireAuth, async (req: Request, res: Response) => {
 router.get('/:owner/:repo/stats', requireAuth, async (req: Request, res: Response) => {
   try {
     const user = req.user as any;
-    const { owner, repo } = req.params;
+    const owner = String(req.params.owner);
+    const repo = String(req.params.repo);
     const stats = await getRepoStats(user.accessToken, owner, repo);
     res.json(stats);
   } catch (err) {

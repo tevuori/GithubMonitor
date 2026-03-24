@@ -9,7 +9,8 @@ const requireAuth = (req: Request, res: Response, next: any) => {
 router.get('/:owner/:repo', requireAuth, async (req: Request, res: Response) => {
   try {
     const user = req.user as any;
-    const { owner, repo } = req.params;
+    const owner = String(req.params.owner);
+    const repo = String(req.params.repo);
     res.json(await getRepoBranches(user.accessToken, owner, repo));
   } catch { res.status(500).json({ error: 'Failed to fetch branches' }); }
 });
@@ -17,8 +18,9 @@ router.get('/:owner/:repo', requireAuth, async (req: Request, res: Response) => 
 router.get('/:owner/:repo/graph', requireAuth, async (req: Request, res: Response) => {
   try {
     const user = req.user as any;
-    const { owner, repo } = req.params;
-    const perPage = parseInt(req.query.perPage as string) || 100;
+    const owner = String(req.params.owner);
+    const repo = String(req.params.repo);
+    const perPage = parseInt(String(req.query.perPage)) || 100;
     res.json(await getGitGraph(user.accessToken, owner, repo, perPage));
   } catch (err) {
     console.error('Git graph error:', err);
