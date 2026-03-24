@@ -32,6 +32,54 @@ export async function getRepoCommits(accessToken: string, owner: string, repo: s
   return data;
 }
 
+// Get single commit with full details including diff
+export async function getCommitDetails(accessToken: string, owner: string, repo: string, sha: string) {
+  const octokit = getOctokit(accessToken);
+  const { data } = await octokit.repos.getCommit({ owner, repo, ref: sha });
+  
+  return {
+    sha: data.sha,
+    html_url: data.html_url,
+    commit: {
+      message: data.commit.message,
+      author: {
+        name: data.commit.author?.name,
+        email: data.commit.author?.email,
+        date: data.commit.author?.date,
+      },
+      committer: {
+        name: data.commit.committer?.name,
+        email: data.commit.committer?.email,
+        date: data.commit.committer?.date,
+      },
+    },
+    author: data.author ? {
+      login: data.author.login,
+      avatar_url: data.author.avatar_url,
+      html_url: data.author.html_url,
+    } : null,
+    committer: data.committer ? {
+      login: data.committer.login,
+      avatar_url: data.committer.avatar_url,
+    } : null,
+    parents: data.parents.map((p: any) => ({ sha: p.sha, html_url: p.html_url })),
+    stats: data.stats,
+    files: data.files?.map((f: any) => ({
+      sha: f.sha,
+      filename: f.filename,
+      status: f.status,
+      additions: f.additions,
+      deletions: f.deletions,
+      changes: f.changes,
+      patch: f.patch,
+      blob_url: f.blob_url,
+      raw_url: f.raw_url,
+      contents_url: f.contents_url,
+      previous_filename: f.previous_filename,
+    })) || [],
+  };
+}
+
 export async function getRepoBranches(accessToken: string, owner: string, repo: string) {
   const octokit = getOctokit(accessToken);
   const { data } = await octokit.repos.listBranches({ owner, repo, per_page: 50 });
@@ -265,15 +313,113 @@ export async function getGitGraph(accessToken: string, owner: string, repo: stri
 export async function getUserIssues(accessToken: string) {
   const octokit = getOctokit(accessToken);
   const { data } = await octokit.issues.listForAuthenticatedUser({ 
-  filter: 'all',  // Shows all issues: created by, assigned to, or mentioning the user
-  state: 'open', 
-  sort: 'updated', 
-  per_page: 50 
-});
-// Also filters out PRs since GitHub API returns them mixed with issues
-return data.filter((issue: any) => !issue.pull_request);
+    filter: 'all',
+    state: 'open', 
+    sort: 'updated', 
+    per_page: 50 
+  });
+  // Filter out PRs since GitHub API returns them mixed with issues
+  return data.filter((issue: any) => !issue.pull_request);
+}
 
-  return data;
+// Get issues for a specific repository
+export async function getRepoIssues(accessToken: string, owner: string, repo: string, state: string = 'open') {
+  const octokit = getOctokit(accessToken);
+  const { data } = await octokit.issues.listForRepo({
+    owner,
+    repo,
+    state: state as 'open' | 'closed' | 'all',
+    sort: 'updated',
+    per_page: 50,
+  });
+  // Filter out PRs
+  return data.filter((issue: any) => !issue.pull_request).map((issue: any) => ({
+    id: issue.id,
+    number: issue.number,
+    title: issue.title,
+    state: issue.state,
+    body: issue.body,
+    user: {
+      login: issue.user?.login,
+      avatar_url: issue.user?.avatar_url,
+      html_url: issue.user?.html_url,
+    },
+    labels: issue.labels,
+    assignees: issue.assignees,
+    milestone: issue.milestone,
+    comments: issue.comments,
+    created_at: issue.created_at,
+    updated_at: issue.updated_at,
+    closed_at: issue.closed_at,
+    html_url: issue.html_url,
+  }));
+}
+
+// Get single issue with full details
+export async function getIssueDetails(accessToken: string, owner: string, repo: string, issueNumber: number) {
+  const octokit = getOctokit(accessToken);
+  const { data } = await octokit.issues.get({ owner, repo, issue_number: issueNumber });
+  
+  return {
+    id: data.id,
+    number: data.number,
+    title: data.title,
+    state: data.state,
+    state_reason: data.state_reason,
+    body: data.body,
+    body_html: data.body_html,
+    user: {
+      login: data.user?.login,
+      avatar_url: data.user?.avatar_url,
+      html_url: data.user?.html_url,
+    },
+    labels: data.labels,
+    assignees: data.assignees?.map((a: any) => ({
+      login: a.login,
+      avatar_url: a.avatar_url,
+    })),
+    milestone: data.milestone ? {
+      number: data.milestone.number,
+      title: data.milestone.title,
+      state: data.milestone.state,
+    } : null,
+    comments: data.comments,
+    created_at: data.created_at,
+    updated_at: data.updated_at,
+    closed_at: data.closed_at,
+    closed_by: data.closed_by ? {
+      login: data.closed_by.login,
+      avatar_url: data.closed_by.avatar_url,
+    } : null,
+    html_url: data.html_url,
+    reactions: data.reactions,
+  };
+}
+
+// Get issue comments
+export async function getIssueComments(accessToken: string, owner: string, repo: string, issueNumber: number) {
+  const octokit = getOctokit(accessToken);
+  const { data } = await octokit.issues.listComments({
+    owner,
+    repo,
+    issue_number: issueNumber,
+    per_page: 100,
+  });
+  
+  return data.map((comment: any) => ({
+    id: comment.id,
+    body: comment.body,
+    body_html: comment.body_html,
+    user: {
+      login: comment.user?.login,
+      avatar_url: comment.user?.avatar_url,
+      html_url: comment.user?.html_url,
+    },
+    created_at: comment.created_at,
+    updated_at: comment.updated_at,
+    html_url: comment.html_url,
+    reactions: comment.reactions,
+  }));
 }
 
 export async function getUserPullRequests(accessToken: string) {
@@ -681,8 +827,9 @@ export async function getBranchProtection(accessToken: string, owner: string, re
       required_conversation_resolution: data.required_conversation_resolution,
     };
   } catch (err: any) {
-    if (err.status === 404) {
-      return { protected: false };
+    // 404 = not protected, 403 = requires GitHub Pro for private repos
+    if (err.status === 404 || err.status === 403) {
+      return { protected: false, reason: err.status === 403 ? 'requires_pro' : 'not_protected' };
     }
     throw err;
   }
@@ -874,7 +1021,8 @@ export async function getRepoProjects(accessToken: string, owner: string, repo: 
       columns_url: p.columns_url,
     }));
   } catch (err: any) {
-    if (err.status === 410) return []; // Projects disabled
+    // 410 = Projects disabled, 404 = Not found or no projects feature
+    if (err.status === 410 || err.status === 404) return [];
     throw err;
   }
 }

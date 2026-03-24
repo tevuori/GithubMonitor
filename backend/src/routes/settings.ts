@@ -37,8 +37,9 @@ router.get('/:owner/:repo/branches/:branch/protection', requireAuth, async (req:
     const data = await getBranchProtection(user.accessToken, owner, repo, branch);
     res.json(data);
   } catch (err: any) {
-    if (err.status === 404) {
-      return res.json({ protected: false });
+    // 404 = not protected, 403 = requires Pro for private repos
+    if (err.status === 404 || err.status === 403) {
+      return res.json({ protected: false, reason: err.status === 403 ? 'requires_pro' : 'not_protected' });
     }
     console.error('Branch protection error:', err);
     res.status(500).json({ error: err.message || 'Failed to fetch branch protection' });
