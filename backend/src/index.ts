@@ -7,6 +7,7 @@ import { Strategy as GitHubStrategy } from 'passport-github2';
 import { createServer } from 'http';
 import { Server as SocketIOServer } from 'socket.io';
 import dotenv from 'dotenv';
+import path from 'path';
 import repoRoutes from './routes/repos';
 import commitRoutes from './routes/commits';
 import branchRoutes from './routes/branches';
@@ -15,8 +16,9 @@ import pullRoutes from './routes/pulls';
 import workflowRoutes from './routes/workflows';
 import statsRoutes from './routes/stats';
 
-// Load environment variables
-dotenv.config();
+// Load environment variables from root .env or backend .env
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 // Initialize Express app
 const app = express();
@@ -188,4 +190,6 @@ httpServer.listen(PORT, () => {
   console.log(`GitHub Monitor Center API running on port ${PORT}`);
   console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`CORS Origin: ${process.env.CORS_ORIGIN || 'http://localhost:5173'}`);
+  console.log(`Frontend URL (OAuth redirect): ${process.env.FRONTEND_URL || 'http://localhost:5173'}`);
+  console.log(`GitHub Callback URL: ${process.env.GITHUB_CALLBACK_URL || 'http://localhost:3000/auth/github/callback'}`);
 });
