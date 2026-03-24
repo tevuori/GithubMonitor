@@ -40,7 +40,15 @@ export async function getRepoBranches(accessToken: string, owner: string, repo: 
 
 export async function getUserIssues(accessToken: string) {
   const octokit = getOctokit(accessToken);
-  const { data } = await octokit.issues.listForAuthenticatedUser({ state: 'open', sort: 'updated', per_page: 50 });
+  const { data } = await octokit.issues.listForAuthenticatedUser({ 
+  filter: 'all',  // Shows all issues: created by, assigned to, or mentioning the user
+  state: 'open', 
+  sort: 'updated', 
+  per_page: 50 
+});
+// Also filters out PRs since GitHub API returns them mixed with issues
+return data.filter((issue: any) => !issue.pull_request);
+
   return data;
 }
 
