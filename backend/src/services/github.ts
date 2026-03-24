@@ -38,6 +38,94 @@ export async function getRepoBranches(accessToken: string, owner: string, repo: 
   return data;
 }
 
+
+export async function getGitGraph(accessToken: string, owner: string, repo: string, perPage: number = 100) {
+  const octokit = getOctokit(accessToken);
+  
+  // Fetch all branches
+  const { data: branches } = await octokit.repos.listBranches({ owner, repo, per_page: 100 });
+  
+  // Fetch commits for each branch with parent info
+  const branchCommits = await Promise.all(
+    branches.map(async (branch) => {
+      try {
+        const { data: commits } = await octokit.repos.listCommits({
+          owner,
+          repo,
+          sha: branch.name,
+          per_page: perPage,
+        });
+        return {
+          branch: branch.name,
+          protected: branch.protected,
+          commits: commits.map((c: any) => ({
+            sha: c.sha,
+            shortSha: c.sha.slice(0, 7),
+            message: c.commit.message.split('
+')[0], // First line only
+            fullMessage: c.commit.message,
+            author: {
+              name: c.commit.author?.name || 'Unknown',
+              email: c.commit.author?.email || '',
+              date: c.commit.author?.date || '',
+              avatar: c.author?.avatar_url || '',
+              login: c.author?.login || '',
+            },
+            parents: c.parents.map((p: any) => p.sha),
+            htmlUrl: c.html_url,
+          })),
+        };
+      } catch {
+        return { branch: branch.name, protected: branch.protected, commits: [] };
+      }
+    })
+  );
+
+  // Build unified commit map and calculate graph lanes
+  const commitMap = new Map<string, any>();
+  const branchHeads = new Map<string, string>();
+
+  branchCommits.forEach(({ branch, commits, protected: isProtected }) => {
+    if (commits.length > 0) {
+      branchHeads.set(branch, commits[0].sha);
+    }
+    commits.forEach((commit: any) => {
+      if (!commitMap.has(commit.sha)) {
+        commitMap.set(commit.sha, { ...commit, branches: [branch] });
+      } else {
+        const existing = commitMap.get(commit.sha);
+        if (!existing.branches.includes(branch)) {
+          existing.branches.push(branch);
+        }
+      }
+    });
+  });
+
+  // Sort commits by date (newest first)
+  const allCommits = Array.from(commitMap.values()).sort(
+    (a, b) => new Date(b.author.date).getTime() - new Date(a.author.date).getTime()
+  );
+
+  // Assign lanes to branches for visualization
+  const branchLanes: Record<string, number> = {};
+  let laneIndex = 0;
+  branches.forEach((b) => {
+    branchLanes[b.name] = laneIndex++;
+  });
+
+  return {
+    branches: branches.map((b) => ({
+      name: b.name,
+      protected: b.protected,
+      headSha: branchHeads.get(b.name) || '',
+      lane: branchLanes[b.name],
+    })),
+    commits: allCommits,
+    branchLanes,
+    totalCommits: allCommits.length,
+  };
+}
+
 export async function getUserIssues(accessToken: string) {
   const octokit = getOctokit(accessToken);
   const { data } = await octokit.issues.listForAuthenticatedUser({ 
