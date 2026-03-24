@@ -25,6 +25,11 @@ import releasesRoutes from './routes/releases';
 import insightsRoutes from './routes/insights';
 import securityRoutes from './routes/security';
 import notificationsRoutes from './routes/notifications';
+import settingsRoutes from './routes/settings';
+import dependenciesRoutes from './routes/dependencies';
+import milestonesRoutes from './routes/milestones';
+import profileRoutes from './routes/profile';
+import reportsRoutes from './routes/reports';
 
 // ES Module fix for __dirname
 const __filename = fileURLToPath(import.meta.url);
@@ -207,6 +212,11 @@ app.use('/api/releases', releasesRoutes);
 app.use('/api/insights', insightsRoutes);
 app.use('/api/security', securityRoutes);
 app.use('/api/notifications', notificationsRoutes);
+app.use('/api/settings', settingsRoutes);
+app.use('/api/dependencies', dependenciesRoutes);
+app.use('/api/milestones', milestonesRoutes);
+app.use('/api/profile', profileRoutes);
+app.use('/api/reports', reportsRoutes);
 
 // Start server
 httpServer.listen(PORT, () => {

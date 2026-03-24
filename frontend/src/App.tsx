@@ -21,6 +21,12 @@ import Releases from './pages/Releases';
 import Insights from './pages/Insights';
 import Security from './pages/Security';
 import Notifications from './pages/Notifications';
+import Settings from './pages/Settings';
+import Dependencies from './pages/Dependencies';
+import ActivityFeed from './pages/ActivityFeed';
+import Milestones from './pages/Milestones';
+import Profile from './pages/Profile';
+import Reports from './pages/Reports';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 
 // Create a client
@@ -84,6 +90,12 @@ function App() {
                 <Route path="insights" element={<Insights />} />
                 <Route path="security" element={<Security />} />
                 <Route path="notifications" element={<Notifications />} />
+                <Route path="settings" element={<Settings />} />
+                <Route path="dependencies" element={<Dependencies />} />
+                <Route path="activity" element={<ActivityFeed />} />
+                <Route path="milestones" element={<Milestones />} />
+                <Route path="profile" element={<Profile />} />
+                <Route path="reports" element={<Reports />} />
               </Route>
             </Routes>
           </div>

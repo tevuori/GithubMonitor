@@ -176,21 +176,99 @@ Build a GitHub monitoring dashboard with deep GitHub integration features includ
 - `/api/notifications/thread/:id/read` - Mark as read
 - `/api/notifications/read` - Mark all as read
 
-## Updated Navigation (17 items)
+## Updated Navigation (23 items)
 1. Dashboard
 2. Repositories
 3. Commits
 4. Pull Requests
 5. Issues
 6. Branches (Git Graph)
-7. Diff Viewer (NEW)
+7. Diff Viewer
 8. Workflows
-9. Releases (NEW)
-10. Contributors
-11. Insights (NEW)
-12. Security (NEW)
-13. Code Search
-14. File Browser
-15. Traffic
-16. Organization
-17. Notifications (NEW)
+9. Releases
+10. Milestones (NEW)
+11. Contributors
+12. Insights
+13. Dependencies (NEW)
+14. Security
+15. Activity Feed (NEW)
+16. Code Search
+17. File Browser
+18. Traffic
+19. Organization
+20. Repo Settings (NEW)
+21. Notifications
+22. Profile (NEW)
+23. Reports (NEW)
+
+## Phase 5 (Jan 2026 - Advanced Management Features)
+
+### Repository Settings (`/settings`)
+- [x] View repository general settings
+- [x] View and display branch protection rules
+- [x] View collaborators with roles and permissions
+- [x] View webhooks configuration
+- [x] Display repository features and merge settings
+- [x] Topics management view
+
+### Dependency Graph (`/dependencies`)
+- [x] View all dependencies from SBOM
+- [x] Group dependencies by ecosystem (npm, pip, maven, etc.)
+- [x] Search across all packages
+- [x] Display package versions and licenses
+- [x] Ecosystem statistics cards
+
+### Activity Feed (`/activity`)
+- [x] Real-time activity feed with Socket.io support
+- [x] Filter by event type (Push, PR, Issue, etc.)
+- [x] Event statistics cards
+- [x] Live mode toggle for real-time updates
+- [x] Detailed event payload display (commits, PR titles, etc.)
+
+### Milestones & Projects (`/milestones`)
+- [x] View all milestones with progress bars
+- [x] Filter milestones by state (open/closed/all)
+- [x] Create new milestones with due dates
+- [x] View classic GitHub Projects
+- [x] Due date status indicators (overdue, soon, ok)
+
+### Profile & Settings (`/profile`)
+- [x] User profile display with stats
+- [x] Activity breakdown by type (pie chart)
+- [x] Activity by day (bar chart)
+- [x] API rate limit monitor with live refresh
+- [x] User preferences (stored in localStorage)
+
+### Export & Reports (`/reports`)
+- [x] User overview report (repos, stars, languages)
+- [x] Weekly activity report
+- [x] Export to CSV format
+- [x] Export to JSON format
+- [x] Top repositories table
+
+## New API Routes (Phase 5)
+- `/api/settings/:owner/:repo` - Repository settings
+- `/api/settings/:owner/:repo/branches/:branch/protection` - Branch protection
+- `/api/settings/:owner/:repo/collaborators` - Collaborators
+- `/api/settings/:owner/:repo/hooks` - Webhooks
+- `/api/dependencies/:owner/:repo` - Dependency graph (SBOM)
+- `/api/milestones/:owner/:repo/milestones` - Milestones
+- `/api/milestones/:owner/:repo/projects` - Classic projects
+- `/api/profile/me` - User profile
+- `/api/profile/rate-limit` - API rate limits
+- `/api/profile/events` - Received events
+- `/api/profile/activity` - Activity summary
+- `/api/reports/user` - User overview report
+- `/api/reports/weekly` - Weekly activity report
+
+## GitHub Service Functions Added (Phase 5)
+- `getRepoSettings` - Repository metadata
+- `getBranchProtection` / `updateBranchProtection` - Branch rules
+- `getCollaborators` - Repository collaborators
+- `getRepoWebhooks` - Webhook configurations
+- `getDependencyGraph` - SBOM parsing
+- `getRepoMilestones` / `createMilestone` / `updateMilestone`
+- `getRepoProjects` / `getProjectColumns` / `getColumnCards`
+- `getUserProfile` - Authenticated user profile
+- `getRateLimit` - API rate limit status
+- `getReceivedEvents` / `getUserActivity` - User activity

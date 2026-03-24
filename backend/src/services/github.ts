@@ -632,3 +632,393 @@ export async function markAllNotificationsAsRead(accessToken: string) {
   await octokit.activity.markNotificationsAsRead();
 }
 
+
+// ==================== REPOSITORY SETTINGS ====================
+
+export async function getRepoSettings(accessToken: string, owner: string, repo: string) {
+  const octokit = getOctokit(accessToken);
+  const { data } = await octokit.repos.get({ owner, repo });
+  return {
+    id: data.id,
+    name: data.name,
+    full_name: data.full_name,
+    description: data.description,
+    private: data.private,
+    fork: data.fork,
+    default_branch: data.default_branch,
+    visibility: data.visibility,
+    has_issues: data.has_issues,
+    has_projects: data.has_projects,
+    has_wiki: data.has_wiki,
+    has_pages: data.has_pages,
+    has_downloads: data.has_downloads,
+    allow_squash_merge: data.allow_squash_merge,
+    allow_merge_commit: data.allow_merge_commit,
+    allow_rebase_merge: data.allow_rebase_merge,
+    allow_auto_merge: data.allow_auto_merge,
+    delete_branch_on_merge: data.delete_branch_on_merge,
+    archived: data.archived,
+    disabled: data.disabled,
+    topics: data.topics,
+    license: data.license,
+    permissions: data.permissions,
+  };
+}
+
+export async function getBranchProtection(accessToken: string, owner: string, repo: string, branch: string) {
+  const octokit = getOctokit(accessToken);
+  try {
+    const { data } = await octokit.repos.getBranchProtection({ owner, repo, branch });
+    return {
+      protected: true,
+      required_status_checks: data.required_status_checks,
+      enforce_admins: data.enforce_admins,
+      required_pull_request_reviews: data.required_pull_request_reviews,
+      restrictions: data.restrictions,
+      required_linear_history: data.required_linear_history,
+      allow_force_pushes: data.allow_force_pushes,
+      allow_deletions: data.allow_deletions,
+      required_conversation_resolution: data.required_conversation_resolution,
+    };
+  } catch (err: any) {
+    if (err.status === 404) {
+      return { protected: false };
+    }
+    throw err;
+  }
+}
+
+export async function updateBranchProtection(accessToken: string, owner: string, repo: string, branch: string, settings: any) {
+  const octokit = getOctokit(accessToken);
+  const { data } = await octokit.repos.updateBranchProtection({
+    owner,
+    repo,
+    branch,
+    ...settings,
+  });
+  return data;
+}
+
+export async function getCollaborators(accessToken: string, owner: string, repo: string) {
+  const octokit = getOctokit(accessToken);
+  const { data } = await octokit.repos.listCollaborators({ owner, repo, per_page: 100 });
+  return data.map((c: any) => ({
+    id: c.id,
+    login: c.login,
+    avatar_url: c.avatar_url,
+    html_url: c.html_url,
+    permissions: c.permissions,
+    role_name: c.role_name,
+  }));
+}
+
+export async function getRepoWebhooks(accessToken: string, owner: string, repo: string) {
+  const octokit = getOctokit(accessToken);
+  try {
+    const { data } = await octokit.repos.listWebhooks({ owner, repo, per_page: 50 });
+    return data.map((h: any) => ({
+      id: h.id,
+      name: h.name,
+      active: h.active,
+      events: h.events,
+      config: {
+        url: h.config.url,
+        content_type: h.config.content_type,
+        insecure_ssl: h.config.insecure_ssl,
+      },
+      created_at: h.created_at,
+      updated_at: h.updated_at,
+    }));
+  } catch (err: any) {
+    if (err.status === 404) return [];
+    throw err;
+  }
+}
+
+export async function getRepoTopics(accessToken: string, owner: string, repo: string) {
+  const octokit = getOctokit(accessToken);
+  const { data } = await octokit.repos.getAllTopics({ owner, repo });
+  return data.names;
+}
+
+export async function updateRepoTopics(accessToken: string, owner: string, repo: string, names: string[]) {
+  const octokit = getOctokit(accessToken);
+  const { data } = await octokit.repos.replaceAllTopics({ owner, repo, names });
+  return data.names;
+}
+
+// ==================== DEPENDENCY GRAPH ====================
+
+export async function getDependencyGraph(accessToken: string, owner: string, repo: string) {
+  const octokit = getOctokit(accessToken);
+  try {
+    // Get dependency graph via SBOM export
+    const { data } = await octokit.request('GET /repos/{owner}/{repo}/dependency-graph/sbom', {
+      owner,
+      repo,
+    });
+    
+    const sbom = data.sbom;
+    const packages = sbom.packages || [];
+    
+    // Group by ecosystem
+    const byEcosystem: Record<string, any[]> = {};
+    packages.forEach((pkg: any) => {
+      // Extract ecosystem from PURL or external refs
+      let ecosystem = 'unknown';
+      if (pkg.externalRefs) {
+        const purl = pkg.externalRefs.find((r: any) => r.referenceType === 'purl');
+        if (purl) {
+          const match = purl.referenceLocator.match(/^pkg:(\w+)\//);
+          if (match) ecosystem = match[1];
+        }
+      }
+      
+      if (!byEcosystem[ecosystem]) byEcosystem[ecosystem] = [];
+      byEcosystem[ecosystem].push({
+        name: pkg.name,
+        version: pkg.versionInfo,
+        license: pkg.licenseConcluded || pkg.licenseDeclared,
+      });
+    });
+    
+    return {
+      name: sbom.name,
+      createdAt: sbom.creationInfo?.created,
+      packages: packages.length,
+      ecosystems: Object.entries(byEcosystem).map(([name, deps]) => ({
+        name,
+        count: deps.length,
+        dependencies: deps,
+      })),
+    };
+  } catch (err: any) {
+    if (err.status === 404 || err.status === 403) {
+      return { packages: 0, ecosystems: [] };
+    }
+    throw err;
+  }
+}
+
+// ==================== MILESTONES & PROJECTS ====================
+
+export async function getRepoMilestones(accessToken: string, owner: string, repo: string, state: string = 'open') {
+  const octokit = getOctokit(accessToken);
+  const { data } = await octokit.issues.listMilestones({
+    owner,
+    repo,
+    state: state as 'open' | 'closed' | 'all',
+    sort: 'due_on',
+    direction: 'asc',
+    per_page: 50,
+  });
+  return data.map((m: any) => ({
+    id: m.id,
+    number: m.number,
+    title: m.title,
+    description: m.description,
+    state: m.state,
+    open_issues: m.open_issues,
+    closed_issues: m.closed_issues,
+    created_at: m.created_at,
+    updated_at: m.updated_at,
+    due_on: m.due_on,
+    closed_at: m.closed_at,
+    html_url: m.html_url,
+    progress: m.open_issues + m.closed_issues > 0 
+      ? Math.round((m.closed_issues / (m.open_issues + m.closed_issues)) * 100) 
+      : 0,
+  }));
+}
+
+export async function getMilestone(accessToken: string, owner: string, repo: string, number: number) {
+  const octokit = getOctokit(accessToken);
+  const { data } = await octokit.issues.getMilestone({ owner, repo, milestone_number: number });
+  return data;
+}
+
+export async function createMilestone(accessToken: string, owner: string, repo: string, options: {
+  title: string;
+  description?: string;
+  due_on?: string;
+  state?: 'open' | 'closed';
+}) {
+  const octokit = getOctokit(accessToken);
+  const { data } = await octokit.issues.createMilestone({ owner, repo, ...options });
+  return data;
+}
+
+export async function updateMilestone(accessToken: string, owner: string, repo: string, number: number, options: {
+  title?: string;
+  description?: string;
+  due_on?: string;
+  state?: 'open' | 'closed';
+}) {
+  const octokit = getOctokit(accessToken);
+  const { data } = await octokit.issues.updateMilestone({ owner, repo, milestone_number: number, ...options });
+  return data;
+}
+
+export async function getRepoProjects(accessToken: string, owner: string, repo: string) {
+  const octokit = getOctokit(accessToken);
+  try {
+    const { data } = await octokit.projects.listForRepo({ owner, repo, state: 'open', per_page: 30 });
+    return data.map((p: any) => ({
+      id: p.id,
+      name: p.name,
+      body: p.body,
+      state: p.state,
+      created_at: p.created_at,
+      updated_at: p.updated_at,
+      html_url: p.html_url,
+      columns_url: p.columns_url,
+    }));
+  } catch (err: any) {
+    if (err.status === 410) return []; // Projects disabled
+    throw err;
+  }
+}
+
+export async function getProjectColumns(accessToken: string, projectId: number) {
+  const octokit = getOctokit(accessToken);
+  const { data } = await octokit.projects.listColumns({ project_id: projectId });
+  return data.map((c: any) => ({
+    id: c.id,
+    name: c.name,
+    created_at: c.created_at,
+    updated_at: c.updated_at,
+    cards_url: c.cards_url,
+  }));
+}
+
+export async function getColumnCards(accessToken: string, columnId: number) {
+  const octokit = getOctokit(accessToken);
+  const { data } = await octokit.projects.listCards({ column_id: columnId, per_page: 100 });
+  return data;
+}
+
+// ==================== USER PROFILE ====================
+
+export async function getUserProfile(accessToken: string) {
+  const octokit = getOctokit(accessToken);
+  const { data } = await octokit.users.getAuthenticated();
+  return {
+    id: data.id,
+    login: data.login,
+    name: data.name,
+    email: data.email,
+    avatar_url: data.avatar_url,
+    html_url: data.html_url,
+    bio: data.bio,
+    company: data.company,
+    location: data.location,
+    blog: data.blog,
+    twitter_username: data.twitter_username,
+    public_repos: data.public_repos,
+    public_gists: data.public_gists,
+    followers: data.followers,
+    following: data.following,
+    created_at: data.created_at,
+    updated_at: data.updated_at,
+    private_gists: data.private_gists,
+    total_private_repos: data.total_private_repos,
+    owned_private_repos: data.owned_private_repos,
+    disk_usage: data.disk_usage,
+    collaborators: data.collaborators,
+    two_factor_authentication: data.two_factor_authentication,
+    plan: data.plan,
+  };
+}
+
+export async function getRateLimit(accessToken: string) {
+  const octokit = getOctokit(accessToken);
+  const { data } = await octokit.rateLimit.get();
+  return {
+    resources: {
+      core: {
+        limit: data.resources.core.limit,
+        remaining: data.resources.core.remaining,
+        reset: new Date(data.resources.core.reset * 1000).toISOString(),
+        used: data.resources.core.used,
+      },
+      search: {
+        limit: data.resources.search.limit,
+        remaining: data.resources.search.remaining,
+        reset: new Date(data.resources.search.reset * 1000).toISOString(),
+        used: data.resources.search.used,
+      },
+      graphql: {
+        limit: data.resources.graphql.limit,
+        remaining: data.resources.graphql.remaining,
+        reset: new Date(data.resources.graphql.reset * 1000).toISOString(),
+        used: data.resources.graphql.used,
+      },
+    },
+    rate: {
+      limit: data.rate.limit,
+      remaining: data.rate.remaining,
+      reset: new Date(data.rate.reset * 1000).toISOString(),
+      used: data.rate.used,
+    },
+  };
+}
+
+export async function getUserEmails(accessToken: string) {
+  const octokit = getOctokit(accessToken);
+  const { data } = await octokit.users.listEmailsForAuthenticatedUser();
+  return data;
+}
+
+export async function getReceivedEvents(accessToken: string, username: string, page: number = 1) {
+  const octokit = getOctokit(accessToken);
+  const { data } = await octokit.activity.listReceivedEventsForUser({
+    username,
+    per_page: 50,
+    page,
+  });
+  return data.map((e: any) => ({
+    id: e.id,
+    type: e.type,
+    actor: {
+      login: e.actor.login,
+      avatar_url: e.actor.avatar_url,
+    },
+    repo: {
+      name: e.repo.name,
+      url: `https://github.com/${e.repo.name}`,
+    },
+    payload: e.payload,
+    created_at: e.created_at,
+  }));
+}
+
+export async function getUserActivity(accessToken: string, username: string) {
+  const octokit = getOctokit(accessToken);
+  const { data } = await octokit.activity.listEventsForAuthenticatedUser({
+    username,
+    per_page: 100,
+  });
+  
+  // Group events by type
+  const byType: Record<string, number> = {};
+  const byDay: Record<string, number> = {};
+  
+  data.forEach((e: any) => {
+    byType[e.type] = (byType[e.type] || 0) + 1;
+    const day = e.created_at.split('T')[0];
+    byDay[day] = (byDay[day] || 0) + 1;
+  });
+  
+  return {
+    total: data.length,
+    byType: Object.entries(byType).map(([type, count]) => ({ type, count })).sort((a, b) => b.count - a.count),
+    byDay: Object.entries(byDay).map(([day, count]) => ({ day, count })).sort((a, b) => a.day.localeCompare(b.day)),
+    recentEvents: data.slice(0, 20).map((e: any) => ({
+      id: e.id,
+      type: e.type,
+      repo: e.repo.name,
+      created_at: e.created_at,
+    })),
+  };
+}
+
