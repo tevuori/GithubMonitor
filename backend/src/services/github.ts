@@ -61,8 +61,7 @@ export async function getGitGraph(accessToken: string, owner: string, repo: stri
           commits: commits.map((c: any) => ({
             sha: c.sha,
             shortSha: c.sha.slice(0, 7),
-            message: c.commit.message.split('
-')[0], // First line only
+            message: c.commit.message.split(/\r?\n/)[0],
             fullMessage: c.commit.message,
             author: {
               name: c.commit.author?.name || 'Unknown',
