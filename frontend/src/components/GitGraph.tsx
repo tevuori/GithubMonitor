@@ -27,67 +27,150 @@ const GitGraph: React.FC<GitGraphProps> = ({ data, owner, repo }) => {
   const [selectedCommit, setSelectedCommit] = useState<Commit | null>(null);
   const [hoveredCommit, setHoveredCommit] = useState<string | null>(null);
 
-  // Build commit index for quick lookup
-  const commitIndex = useMemo(() => {
-    const index = new Map<string, number>();
-    data.commits.forEach((c, i) => index.set(c.sha, i));
-    return index;
-  }, [data.commits]);
-
-  // Build a map of which branch each commit belongs to (use first/primary branch)
-  const commitToBranch = useMemo(() => {
-    const map = new Map<string, string>();
-    data.commits.forEach((commit) => {
-      if (commit.branches && commit.branches.length > 0) {
-        map.set(commit.sha, commit.branches[0]);
-      }
-    });
-    return map;
-  }, [data.commits]);
-
-  // Improved lane assignment - track active lanes and assign based on branch continuity
-  const commitLanes = useMemo(() => {
-    const lanes = new Map<string, number>();
-    const branchToLane = new Map<string, number>();
-    
-    // First pass: assign lanes to branches based on their order
-    data.branches.forEach((branch, idx) => {
-      branchToLane.set(branch.name, idx);
-    });
-
-    // Second pass: assign lanes to commits based on their branch
-    data.commits.forEach((commit) => {
-      const primaryBranch = commit.branches?.[0];
-      if (primaryBranch && branchToLane.has(primaryBranch)) {
-        lanes.set(commit.sha, branchToLane.get(primaryBranch)!);
-      } else {
-        // Fallback: use lane 0 for commits without branch info
-        lanes.set(commit.sha, 0);
-      }
-    });
-
-    return lanes;
-  }, [data.commits, data.branches]);
-
-  // Get the color for a commit based on its branch
-  const getCommitColor = (commit: Commit) => {
-    const branch = commit.branches?.[0];
-    if (branch) {
-      const branchIdx = data.branches.findIndex(b => b.name === branch);
-      if (branchIdx >= 0) {
-        return BRANCH_COLORS[branchIdx % BRANCH_COLORS.length];
-      }
-    }
-    return BRANCH_COLORS[0];
-  };
-
   const NODE_RADIUS = 6;
   const ROW_HEIGHT = 48;
-  const LANE_WIDTH = 28;
-  const LEFT_PADDING = 20;
-  const svgWidth = Math.max(200, (data.branches.length + 1) * LANE_WIDTH + LEFT_PADDING * 2);
+  const LANE_WIDTH = 24;
+  const LEFT_PADDING = 16;
 
+  // Build graph layout using a simpler, more robust algorithm
+  const { commitPositions, edges, maxLane } = useMemo(() => {
+    const positions = new Map<string, { row: number; lane: number; color: string }>();
+    const edges: Array<{
+      fromSha: string;
+      toSha: string;
+      fromRow: number;
+      fromLane: number;
+      toRow: number;
+      toLane: number;
+      color: string;
+    }> = [];
+
+    if (data.commits.length === 0) {
+      return { commitPositions: positions, edges, maxLane: 0 };
+    }
+
+    // Create index for quick parent lookup
+    const commitIndex = new Map<string, number>();
+    data.commits.forEach((c, i) => commitIndex.set(c.sha, i));
+
+    // Track active lanes (which SHA currently "owns" each lane)
+    const activeLanes: (string | null)[] = [];
+
+    // Helper to find first available lane
+    const findFreeLane = (): number => {
+      const idx = activeLanes.indexOf(null);
+      if (idx !== -1) return idx;
+      activeLanes.push(null);
+      return activeLanes.length - 1;
+    };
+
+    // Helper to get color for a commit
+    const getCommitColor = (commit: Commit): string => {
+      const primaryBranch = commit.branches?.[0];
+      if (primaryBranch) {
+        const branchIdx = data.branches.findIndex(b => b.name === primaryBranch);
+        if (branchIdx >= 0) {
+          return BRANCH_COLORS[branchIdx % BRANCH_COLORS.length];
+        }
+      }
+      return BRANCH_COLORS[0];
+    };
+
+    // Process commits top to bottom (newest first)
+    data.commits.forEach((commit, row) => {
+      let lane: number;
+      const color = getCommitColor(commit);
+
+      // Check if a child already reserved a lane for this commit
+      const reservedLane = activeLanes.indexOf(commit.sha);
+      if (reservedLane !== -1) {
+        lane = reservedLane;
+      } else {
+        lane = findFreeLane();
+      }
+
+      // Place this commit
+      activeLanes[lane] = commit.sha;
+      positions.set(commit.sha, { row, lane, color });
+
+      // Process parents
+      const validParents = commit.parents.filter(psha => commitIndex.has(psha));
+      
+      validParents.forEach((parentSha, pIdx) => {
+        const parentRow = commitIndex.get(parentSha)!;
+        let parentLane: number;
+
+        // Check if parent already has a position (from another child)
+        const existingParentPos = positions.get(parentSha);
+        if (existingParentPos) {
+          parentLane = existingParentPos.lane;
+        } else {
+          // Check if parent is already reserved in a lane
+          const reservedParentLane = activeLanes.indexOf(parentSha);
+          if (reservedParentLane !== -1) {
+            parentLane = reservedParentLane;
+          } else if (pIdx === 0) {
+            // First parent continues in the same lane
+            parentLane = lane;
+            activeLanes[lane] = parentSha;
+          } else {
+            // Secondary parents get a new lane
+            parentLane = findFreeLane();
+            activeLanes[parentLane] = parentSha;
+          }
+        }
+
+        // Add edge
+        edges.push({
+          fromSha: commit.sha,
+          toSha: parentSha,
+          fromRow: row,
+          fromLane: lane,
+          toRow: parentRow,
+          toLane: parentLane,
+          color,
+        });
+      });
+
+      // Free up lane if this commit has no parents (root commit)
+      if (validParents.length === 0) {
+        activeLanes[lane] = null;
+      }
+    });
+
+    const maxLane = Math.max(0, ...Array.from(positions.values()).map(p => p.lane));
+    return { commitPositions: positions, edges, maxLane };
+  }, [data.commits, data.branches]);
+
+  const svgWidth = Math.max(120, (maxLane + 2) * LANE_WIDTH + LEFT_PADDING * 2);
+
+  const getX = (lane: number) => LEFT_PADDING + lane * LANE_WIDTH + LANE_WIDTH / 2;
+  const getY = (row: number) => row * ROW_HEIGHT + ROW_HEIGHT / 2 + 20;
   const getColor = (branchIndex: number) => BRANCH_COLORS[branchIndex % BRANCH_COLORS.length];
+
+  // Generate SVG path for an edge
+  const renderEdgePath = (edge: typeof edges[0]) => {
+    const x1 = getX(edge.fromLane);
+    const y1 = getY(edge.fromRow);
+    const x2 = getX(edge.toLane);
+    const y2 = getY(edge.toRow);
+
+    if (edge.fromLane === edge.toLane) {
+      // Straight vertical line
+      return `M ${x1} ${y1} L ${x2} ${y2}`;
+    }
+
+    // Curved connection for branch/merge
+    // Go down a bit, curve horizontally, then continue down
+    const curveStartY = y1 + ROW_HEIGHT * 0.4;
+    const curveEndY = curveStartY + ROW_HEIGHT * 0.4;
+
+    return `M ${x1} ${y1} 
+            L ${x1} ${curveStartY}
+            Q ${x1} ${curveEndY}, ${(x1 + x2) / 2} ${curveEndY}
+            Q ${x2} ${curveEndY}, ${x2} ${curveEndY + ROW_HEIGHT * 0.2}
+            L ${x2} ${y2}`;
+  };
 
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
@@ -150,85 +233,46 @@ const GitGraph: React.FC<GitGraphProps> = ({ data, owner, repo }) => {
               </filter>
             </defs>
 
-            {/* Connection Lines */}
-            {data.commits.map((commit, rowIndex) => {
-              const lane = commitLanes.get(commit.sha) ?? 0;
-              const x = LEFT_PADDING + lane * LANE_WIDTH + LANE_WIDTH / 2;
-              const y = rowIndex * ROW_HEIGHT + ROW_HEIGHT / 2 + 20;
-              const commitColor = getCommitColor(commit);
+            {/* Edges (lines) - render first so nodes appear on top */}
+            {edges.map((edge, idx) => (
+              <path
+                key={`edge-${idx}-${edge.fromSha}-${edge.toSha}`}
+                d={renderEdgePath(edge)}
+                fill="none"
+                stroke={edge.color}
+                strokeWidth="2"
+                strokeOpacity="0.7"
+              />
+            ))}
 
-              return commit.parents.map((parentSha) => {
-                const parentIndex = commitIndex.get(parentSha);
-                if (parentIndex === undefined) return null;
+            {/* Nodes (commits) */}
+            {data.commits.map((commit) => {
+              const pos = commitPositions.get(commit.sha);
+              if (!pos) return null;
 
-                const parentLane = commitLanes.get(parentSha) ?? 0;
-                const parentX = LEFT_PADDING + parentLane * LANE_WIDTH + LANE_WIDTH / 2;
-                const parentY = parentIndex * ROW_HEIGHT + ROW_HEIGHT / 2 + 20;
-
-                if (lane === parentLane) {
-                  // Straight vertical line
-                  return (
-                    <line
-                      key={`${commit.sha}-${parentSha}`}
-                      x1={x}
-                      y1={y}
-                      x2={parentX}
-                      y2={parentY}
-                      stroke={commitColor}
-                      strokeWidth="2"
-                      strokeOpacity="0.7"
-                    />
-                  );
-                } else {
-                  // Curved line for merge/branch - improved bezier curve
-                  const midY = y + (parentY - y) * 0.3;
-                  return (
-                    <path
-                      key={`${commit.sha}-${parentSha}`}
-                      d={`M ${x} ${y} 
-                          L ${x} ${midY}
-                          Q ${x} ${midY + 15}, ${(x + parentX) / 2} ${midY + 15}
-                          Q ${parentX} ${midY + 15}, ${parentX} ${midY + 30}
-                          L ${parentX} ${parentY}`}
-                      fill="none"
-                      stroke={commitColor}
-                      strokeWidth="2"
-                      strokeOpacity="0.7"
-                    />
-                  );
-                }
-              });
-            })}
-
-            {/* Commit Nodes */}
-            {data.commits.map((commit, rowIndex) => {
-              const lane = commitLanes.get(commit.sha) ?? 0;
-              const x = LEFT_PADDING + lane * LANE_WIDTH + LANE_WIDTH / 2;
-              const y = rowIndex * ROW_HEIGHT + ROW_HEIGHT / 2 + 20;
-              const commitColor = getCommitColor(commit);
+              const x = getX(pos.lane);
+              const y = getY(pos.row);
               const isHead = data.branches.some((b) => b.headSha === commit.sha);
               const isHovered = hoveredCommit === commit.sha;
               const isSelected = selectedCommit?.sha === commit.sha;
 
               return (
                 <g key={commit.sha}>
-                  {/* Glow effect for head commits */}
                   {isHead && (
                     <circle
                       cx={x}
                       cy={y}
                       r={NODE_RADIUS + 4}
-                      fill={commitColor}
+                      fill={pos.color}
                       opacity="0.3"
                     />
                   )}
-                  {/* Main node */}
                   <circle
                     cx={x}
                     cy={y}
                     r={isHovered || isSelected ? NODE_RADIUS + 2 : NODE_RADIUS}
-                    fill={isHead ? commitColor : '#ffffff'}
-                    stroke={commitColor}
+                    fill={isHead ? pos.color : '#ffffff'}
+                    stroke={pos.color}
                     strokeWidth={isHead ? 3 : 2}
                     className="cursor-pointer"
                     style={{
@@ -262,7 +306,6 @@ const GitGraph: React.FC<GitGraphProps> = ({ data, owner, repo }) => {
                   onMouseLeave={() => setHoveredCommit(null)}
                   onClick={() => setSelectedCommit(commit)}
                 >
-                  {/* Author Avatar */}
                   {commit.author.avatar ? (
                     <img
                       src={commit.author.avatar}
@@ -275,7 +318,6 @@ const GitGraph: React.FC<GitGraphProps> = ({ data, owner, repo }) => {
                     </div>
                   )}
 
-                  {/* Commit Info */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <span className="text-sm text-gray-800 dark:text-gray-200 truncate font-medium">
@@ -296,7 +338,6 @@ const GitGraph: React.FC<GitGraphProps> = ({ data, owner, repo }) => {
                     </div>
                   </div>
 
-                  {/* Branch Tags */}
                   <div className="flex items-center gap-1.5 flex-shrink-0">
                     {commit.branches.slice(0, 2).map((branch) => {
                       const branchIdx = data.branches.findIndex(b => b.name === branch);
