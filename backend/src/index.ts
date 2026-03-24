@@ -20,6 +20,11 @@ import searchRoutes from './routes/search';
 import filesRoutes from './routes/files';
 import trafficRoutes from './routes/traffic';
 import orgsRoutes from './routes/orgs';
+import compareRoutes from './routes/compare';
+import releasesRoutes from './routes/releases';
+import insightsRoutes from './routes/insights';
+import securityRoutes from './routes/security';
+import notificationsRoutes from './routes/notifications';
 
 // ES Module fix for __dirname
 const __filename = fileURLToPath(import.meta.url);
@@ -197,6 +202,11 @@ app.use('/api/search', searchRoutes);
 app.use('/api/files', filesRoutes);
 app.use('/api/traffic', trafficRoutes);
 app.use('/api/orgs', orgsRoutes);
+app.use('/api/compare', compareRoutes);
+app.use('/api/releases', releasesRoutes);
+app.use('/api/insights', insightsRoutes);
+app.use('/api/security', securityRoutes);
+app.use('/api/notifications', notificationsRoutes);
 
 // Start server
 httpServer.listen(PORT, () => {

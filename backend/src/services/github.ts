@@ -307,3 +307,328 @@ export async function getContributorStats(accessToken: string, owner: string, re
   }
   return [];
 }
+
+
+// ==================== DIFF / COMPARE ====================
+
+export async function compareBranches(accessToken: string, owner: string, repo: string, base: string, head: string) {
+  const octokit = getOctokit(accessToken);
+  const { data } = await octokit.repos.compareCommits({
+    owner,
+    repo,
+    base,
+    head,
+  });
+  return {
+    status: data.status,
+    ahead_by: data.ahead_by,
+    behind_by: data.behind_by,
+    total_commits: data.total_commits,
+    commits: data.commits.map((c: any) => ({
+      sha: c.sha,
+      shortSha: c.sha.slice(0, 7),
+      message: c.commit.message.split(/\r?\n/)[0],
+      author: {
+        name: c.commit.author?.name || 'Unknown',
+        date: c.commit.author?.date || '',
+        avatar: c.author?.avatar_url || '',
+        login: c.author?.login || '',
+      },
+      htmlUrl: c.html_url,
+    })),
+    files: data.files?.map((f: any) => ({
+      sha: f.sha,
+      filename: f.filename,
+      status: f.status,
+      additions: f.additions,
+      deletions: f.deletions,
+      changes: f.changes,
+      patch: f.patch,
+      blob_url: f.blob_url,
+      raw_url: f.raw_url,
+    })) || [],
+    base_commit: {
+      sha: data.base_commit.sha,
+      message: data.base_commit.commit.message.split(/\r?\n/)[0],
+    },
+    merge_base_commit: {
+      sha: data.merge_base_commit.sha,
+      message: data.merge_base_commit.commit.message.split(/\r?\n/)[0],
+    },
+  };
+}
+
+export async function compareCommits(accessToken: string, owner: string, repo: string, base: string, head: string) {
+  return compareBranches(accessToken, owner, repo, base, head);
+}
+
+// ==================== RELEASES ====================
+
+export async function getRepoReleases(accessToken: string, owner: string, repo: string, page: number = 1) {
+  const octokit = getOctokit(accessToken);
+  const { data } = await octokit.repos.listReleases({ owner, repo, per_page: 20, page });
+  return data.map((r: any) => ({
+    id: r.id,
+    tag_name: r.tag_name,
+    name: r.name,
+    body: r.body,
+    draft: r.draft,
+    prerelease: r.prerelease,
+    created_at: r.created_at,
+    published_at: r.published_at,
+    author: {
+      login: r.author.login,
+      avatar_url: r.author.avatar_url,
+    },
+    html_url: r.html_url,
+    tarball_url: r.tarball_url,
+    zipball_url: r.zipball_url,
+    assets: r.assets.map((a: any) => ({
+      id: a.id,
+      name: a.name,
+      size: a.size,
+      download_count: a.download_count,
+      browser_download_url: a.browser_download_url,
+      content_type: a.content_type,
+    })),
+  }));
+}
+
+export async function getRepoTags(accessToken: string, owner: string, repo: string) {
+  const octokit = getOctokit(accessToken);
+  const { data } = await octokit.repos.listTags({ owner, repo, per_page: 50 });
+  return data;
+}
+
+export async function getRelease(accessToken: string, owner: string, repo: string, releaseId: number) {
+  const octokit = getOctokit(accessToken);
+  const { data } = await octokit.repos.getRelease({ owner, repo, release_id: releaseId });
+  return data;
+}
+
+export async function getReleaseAssets(accessToken: string, owner: string, repo: string, releaseId: number) {
+  const octokit = getOctokit(accessToken);
+  const { data } = await octokit.repos.listReleaseAssets({ owner, repo, release_id: releaseId });
+  return data;
+}
+
+export async function createRelease(accessToken: string, owner: string, repo: string, options: {
+  tag_name: string;
+  name?: string;
+  body?: string;
+  draft?: boolean;
+  prerelease?: boolean;
+  target_commitish?: string;
+}) {
+  const octokit = getOctokit(accessToken);
+  const { data } = await octokit.repos.createRelease({
+    owner,
+    repo,
+    ...options,
+  });
+  return data;
+}
+
+// ==================== INSIGHTS / STATS ====================
+
+export async function getCodeFrequency(accessToken: string, owner: string, repo: string) {
+  const octokit = getOctokit(accessToken);
+  for (let i = 0; i < 3; i++) {
+    const res = await octokit.repos.getCodeFrequencyStats({ owner, repo });
+    if (res.status === 200 && res.data) {
+      // Data is array of [timestamp, additions, deletions]
+      return (res.data as any[]).map((week: number[]) => ({
+        week: new Date(week[0] * 1000).toISOString(),
+        additions: week[1],
+        deletions: week[2],
+      }));
+    }
+    await new Promise(r => setTimeout(r, 2000));
+  }
+  return [];
+}
+
+export async function getCommitActivity(accessToken: string, owner: string, repo: string) {
+  const octokit = getOctokit(accessToken);
+  for (let i = 0; i < 3; i++) {
+    const res = await octokit.repos.getCommitActivityStats({ owner, repo });
+    if (res.status === 200 && res.data) {
+      return (res.data as any[]).map((week: any) => ({
+        week: new Date(week.week * 1000).toISOString(),
+        total: week.total,
+        days: week.days, // [Sun, Mon, Tue, Wed, Thu, Fri, Sat]
+      }));
+    }
+    await new Promise(r => setTimeout(r, 2000));
+  }
+  return [];
+}
+
+export async function getPunchCard(accessToken: string, owner: string, repo: string) {
+  const octokit = getOctokit(accessToken);
+  for (let i = 0; i < 3; i++) {
+    const res = await octokit.repos.getPunchCardStats({ owner, repo });
+    if (res.status === 200 && res.data) {
+      // Data is array of [day, hour, commits]
+      return (res.data as any[]).map((item: number[]) => ({
+        day: item[0], // 0=Sunday, 6=Saturday
+        hour: item[1],
+        commits: item[2],
+      }));
+    }
+    await new Promise(r => setTimeout(r, 2000));
+  }
+  return [];
+}
+
+export async function getParticipation(accessToken: string, owner: string, repo: string) {
+  const octokit = getOctokit(accessToken);
+  for (let i = 0; i < 3; i++) {
+    const res = await octokit.repos.getParticipationStats({ owner, repo });
+    if (res.status === 200 && res.data) {
+      return {
+        all: res.data.all,
+        owner: res.data.owner,
+      };
+    }
+    await new Promise(r => setTimeout(r, 2000));
+  }
+  return { all: [], owner: [] };
+}
+
+export async function getCommunityProfile(accessToken: string, owner: string, repo: string) {
+  const octokit = getOctokit(accessToken);
+  try {
+    const { data } = await octokit.repos.getCommunityProfileMetrics({ owner, repo });
+    return data;
+  } catch {
+    return null;
+  }
+}
+
+// ==================== SECURITY ALERTS ====================
+
+export async function getDependabotAlerts(accessToken: string, owner: string, repo: string, state: string = 'open', severity?: string) {
+  const octokit = getOctokit(accessToken);
+  try {
+    const params: any = { owner, repo, state, per_page: 50 };
+    if (severity) params.severity = severity;
+    const { data } = await octokit.request('GET /repos/{owner}/{repo}/dependabot/alerts', params);
+    return data;
+  } catch (err: any) {
+    if (err.status === 403 || err.status === 404) {
+      return [];
+    }
+    throw err;
+  }
+}
+
+export async function getCodeScanningAlerts(accessToken: string, owner: string, repo: string, state: string = 'open') {
+  const octokit = getOctokit(accessToken);
+  try {
+    const { data } = await octokit.request('GET /repos/{owner}/{repo}/code-scanning/alerts', {
+      owner,
+      repo,
+      state,
+      per_page: 50,
+    });
+    return data;
+  } catch (err: any) {
+    if (err.status === 403 || err.status === 404) {
+      return [];
+    }
+    throw err;
+  }
+}
+
+export async function getSecretScanningAlerts(accessToken: string, owner: string, repo: string, state: string = 'open') {
+  const octokit = getOctokit(accessToken);
+  try {
+    const { data } = await octokit.request('GET /repos/{owner}/{repo}/secret-scanning/alerts', {
+      owner,
+      repo,
+      state,
+      per_page: 50,
+    });
+    return data;
+  } catch (err: any) {
+    if (err.status === 403 || err.status === 404) {
+      return [];
+    }
+    throw err;
+  }
+}
+
+export async function getSecurityAlerts(accessToken: string, owner: string, repo: string) {
+  const [dependabot, codeScanning, secretScanning] = await Promise.all([
+    getDependabotAlerts(accessToken, owner, repo).catch(() => []),
+    getCodeScanningAlerts(accessToken, owner, repo).catch(() => []),
+    getSecretScanningAlerts(accessToken, owner, repo).catch(() => []),
+  ]);
+  
+  return {
+    dependabot,
+    codeScanning,
+    secretScanning,
+    summary: {
+      dependabot: dependabot.length,
+      codeScanning: codeScanning.length,
+      secretScanning: secretScanning.length,
+      total: dependabot.length + codeScanning.length + secretScanning.length,
+    },
+  };
+}
+
+// ==================== NOTIFICATIONS ====================
+
+export async function getNotifications(accessToken: string, all: boolean = false, participating: boolean = false, page: number = 1) {
+  const octokit = getOctokit(accessToken);
+  const { data } = await octokit.activity.listNotificationsForAuthenticatedUser({
+    all,
+    participating,
+    per_page: 50,
+    page,
+  });
+  return data.map((n: any) => ({
+    id: n.id,
+    unread: n.unread,
+    reason: n.reason,
+    updated_at: n.updated_at,
+    last_read_at: n.last_read_at,
+    subject: {
+      title: n.subject.title,
+      url: n.subject.url,
+      type: n.subject.type,
+      latest_comment_url: n.subject.latest_comment_url,
+    },
+    repository: {
+      id: n.repository.id,
+      name: n.repository.name,
+      full_name: n.repository.full_name,
+      owner: {
+        login: n.repository.owner.login,
+        avatar_url: n.repository.owner.avatar_url,
+      },
+      html_url: n.repository.html_url,
+    },
+    url: n.url,
+    subscription_url: n.subscription_url,
+  }));
+}
+
+export async function getNotificationThread(accessToken: string, threadId: number) {
+  const octokit = getOctokit(accessToken);
+  const { data } = await octokit.activity.getThread({ thread_id: threadId });
+  return data;
+}
+
+export async function markNotificationAsRead(accessToken: string, threadId: number) {
+  const octokit = getOctokit(accessToken);
+  await octokit.activity.markThreadAsRead({ thread_id: threadId });
+}
+
+export async function markAllNotificationsAsRead(accessToken: string) {
+  const octokit = getOctokit(accessToken);
+  await octokit.activity.markNotificationsAsRead();
+}
+

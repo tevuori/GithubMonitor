@@ -16,6 +16,11 @@ import CodeSearch from './pages/CodeSearch';
 import FileBrowser from './pages/FileBrowser';
 import Traffic from './pages/Traffic';
 import Organization from './pages/Organization';
+import DiffViewer from './pages/DiffViewer';
+import Releases from './pages/Releases';
+import Insights from './pages/Insights';
+import Security from './pages/Security';
+import Notifications from './pages/Notifications';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 
 // Create a client
@@ -74,6 +79,11 @@ function App() {
                 <Route path="files" element={<FileBrowser />} />
                 <Route path="traffic" element={<Traffic />} />
                 <Route path="organization" element={<Organization />} />
+                <Route path="diff" element={<DiffViewer />} />
+                <Route path="releases" element={<Releases />} />
+                <Route path="insights" element={<Insights />} />
+                <Route path="security" element={<Security />} />
+                <Route path="notifications" element={<Notifications />} />
               </Route>
             </Routes>
           </div>

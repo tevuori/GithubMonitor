@@ -73,17 +73,17 @@ Build a GitHub monitoring dashboard with deep GitHub integration features includ
 12. Organization (NEW)
 
 ## Backlog
-- P1: Diff Viewer (compare branches/commits)
-- P1: Contribution Analytics (detailed patterns)
-- P1: Release Management
-- P2: Security Alerts (Dependabot)
 - P2: Branch Protection Rules management
 - P2: Real-time webhooks
+- P2: Starred Repositories management
+- P2: Quick Actions (create issues, merge PRs)
 
 ## Tech Notes
 - Traffic API requires push access to repo
 - Org API requires org membership
 - Code search uses GitHub Search API (rate limited)
+- Security alerts require admin/security access to repository
+- Dependabot alerts require repository admin permissions
 
 ## Phase 3 (Jan 2026 - UI Improvements)
 
@@ -113,3 +113,84 @@ Build a GitHub monitoring dashboard with deep GitHub integration features includ
 - [x] Topic tags display
 - [x] Quick links to File Browser and Git Graph
 - [x] Language color indicators
+
+## Phase 4 (Jan 2026 - Advanced Features)
+
+### Diff Viewer (`/diff`)
+- [x] Compare branches side-by-side
+- [x] Compare commits
+- [x] Unified and split view modes
+- [x] Syntax highlighted diffs
+- [x] File changes with additions/deletions count
+- [x] Expandable file patches
+- [x] Commit list in comparison
+
+### Release Management (`/releases`)
+- [x] List all releases with metadata
+- [x] View release assets and download counts
+- [x] Create new releases with form
+- [x] Support for draft and pre-release flags
+- [x] Download ZIP/TAR archives
+- [x] View release notes/changelog
+
+### Repository Insights (`/insights`)
+- [x] Code frequency chart (additions/deletions over time)
+- [x] Commit activity chart (commits per week)
+- [x] Participation chart (owner vs all contributors)
+- [x] Punch card heatmap (commits by day/hour)
+- [x] Interactive charts with Recharts
+
+### Security Alerts (`/security`)
+- [x] Dependabot alerts with severity filtering
+- [x] Code scanning alerts
+- [x] Secret scanning alerts
+- [x] Summary cards with alert counts
+- [x] Filter by state (open/fixed/dismissed)
+- [x] Filter by severity (critical/high/medium/low)
+- [x] Direct links to GitHub for remediation
+
+### Notifications Center (`/notifications`)
+- [x] View all GitHub notifications
+- [x] Filter by unread/all/participating
+- [x] Filter by type (Issue/PR/Commit/Release/Discussion)
+- [x] Mark individual notifications as read
+- [x] Mark all notifications as read
+- [x] Reason badges (review requested, mentioned, etc.)
+- [x] Direct links to GitHub items
+
+## New API Routes (Phase 4)
+- `/api/compare/:owner/:repo/branches` - Compare branches
+- `/api/compare/:owner/:repo/commits` - Compare commits
+- `/api/releases/:owner/:repo` - List releases
+- `/api/releases/:owner/:repo/tags` - List tags
+- `/api/releases/:owner/:repo` (POST) - Create release
+- `/api/insights/:owner/:repo/code-frequency` - Code frequency stats
+- `/api/insights/:owner/:repo/commit-activity` - Commit activity stats
+- `/api/insights/:owner/:repo/punch-card` - Punch card data
+- `/api/insights/:owner/:repo/participation` - Participation stats
+- `/api/security/:owner/:repo` - All security alerts summary
+- `/api/security/:owner/:repo/dependabot` - Dependabot alerts
+- `/api/security/:owner/:repo/code-scanning` - Code scanning alerts
+- `/api/security/:owner/:repo/secret-scanning` - Secret scanning alerts
+- `/api/notifications` - User notifications
+- `/api/notifications/thread/:id/read` - Mark as read
+- `/api/notifications/read` - Mark all as read
+
+## Updated Navigation (17 items)
+1. Dashboard
+2. Repositories
+3. Commits
+4. Pull Requests
+5. Issues
+6. Branches (Git Graph)
+7. Diff Viewer (NEW)
+8. Workflows
+9. Releases (NEW)
+10. Contributors
+11. Insights (NEW)
+12. Security (NEW)
+13. Code Search
+14. File Browser
+15. Traffic
+16. Organization
+17. Notifications (NEW)
