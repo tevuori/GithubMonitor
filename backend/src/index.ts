@@ -7,6 +7,7 @@ import { Strategy as GitHubStrategy } from 'passport-github2';
 import { createServer } from 'http';
 import { Server as SocketIOServer } from 'socket.io';
 import dotenv from 'dotenv';
+import repoRoutes from './routes/repos';
 
 // Load environment variables
 dotenv.config();
@@ -21,7 +22,26 @@ const httpServer = createServer(app);
 // Initialize Socket.io
 const io = new SocketIOServer(httpServer, {
   cors: {
-    origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) return callback(null, true);
+      
+      // Allow all localhost origins in development
+      if (process.env.NODE_ENV === 'development') {
+        if (origin.startsWith('http://localhost:')) {
+          return callback(null, true);
+        }
+      }
+      
+      // In production, use configured origin
+      const allowedOrigin = process.env.CORS_ORIGIN;
+      if (allowedOrigin && origin === allowedOrigin) {
+        return callback(null, true);
+      }
+      
+      // Origin not allowed
+      callback(new Error('Not allowed by CORS'));
+    },
     credentials: true
   }
 });
@@ -29,7 +49,26 @@ const io = new SocketIOServer(httpServer, {
 // Middleware
 app.use(helmet());
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    // Allow all localhost origins in development
+    if (process.env.NODE_ENV === 'development') {
+      if (origin.startsWith('http://localhost:')) {
+        return callback(null, true);
+      }
+    }
+    
+    // In production, use configured origin
+    const allowedOrigin = process.env.CORS_ORIGIN;
+    if (allowedOrigin && origin === allowedOrigin) {
+      return callback(null, true);
+    }
+    
+    // Origin not allowed
+    callback(new Error('Not allowed by CORS'));
+  },
   credentials: true
 }));
 app.use(express.json());
@@ -37,7 +76,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // Session configuration
 app.use(session({
-  secret: process.env.SESSION_SECRET || 'your-secret-key-change-this',
+  secret: process.env.SESSION_SECRET || '1fa34c482e28fd518f9f71ed55d405f0f1371c81161811172076e3507a948d32',
   resave: false,
   saveUninitialized: false,
   cookie: {
@@ -57,7 +96,7 @@ passport.use(new GitHubStrategy({
   clientSecret: process.env.GITHUB_CLIENT_SECRET || '',
   callbackURL: process.env.GITHUB_CALLBACK_URL || 'http://localhost:3000/auth/github/callback',
   scope: ['user:email', 'read:org', 'repo']
-}, (accessToken: string, refreshToken: string, profile: any, done: any) => {
+}, (accessToken: string, _refreshToken: string, profile: any, done: any) => {
   // Store the access token with the user profile
   profile.accessToken = accessToken;
   return done(null, profile);
@@ -91,7 +130,7 @@ io.on('connection', (socket) => {
 });
 
 // Routes
-app.get('/', (req, res) => {
+app.get('/', (_req, res) => {
   res.json({
     name: 'GitHub Monitor Center API',
     version: '0.1.0',
@@ -104,17 +143,17 @@ app.get('/auth/github', passport.authenticate('github'));
 
 app.get('/auth/github/callback',
   passport.authenticate('github', { failureRedirect: '/login' }),
-  (req, res) => {
-    res.redirect('/');
+  (_req, res) => {
+    res.redirect(process.env.FRONTEND_URL || 'http://localhost:5173');
   }
 );
 
-app.get('/auth/logout', (req, res) => {
-  req.logout((err) => {
+app.get('/auth/logout', (_req, res) => {
+  _req.logout((err) => {
     if (err) {
       return res.status(500).json({ error: 'Logout failed' });
     }
-    res.json({ message: 'Logged out successfully' });
+    return res.json({ message: 'Logged out successfully' });
   });
 });
 
@@ -130,9 +169,7 @@ app.get('/auth/me', (req, res) => {
 });
 
 // API routes placeholder
-app.get('/api/repos', (req, res) => {
-  res.json({ message: 'Repository list endpoint' });
-});
+app.use('/api/repos', repoRoutes);
 
 // Start server
 httpServer.listen(PORT, () => {
