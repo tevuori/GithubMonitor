@@ -84,3 +84,32 @@ Build a GitHub monitoring dashboard with deep GitHub integration features includ
 - Traffic API requires push access to repo
 - Org API requires org membership
 - Code search uses GitHub Search API (rate limited)
+
+## Phase 3 (Jan 2026 - UI Improvements)
+
+### Dashboard Improvements
+- [x] Welcome banner with user avatar
+- [x] 6 stat cards (repos, stars, forks, issues, PRs, private)
+- [x] Recent activity feed (PRs + Issues combined)
+- [x] Language breakdown chart
+- [x] Recent repositories list
+- [x] Quick links to new features
+
+### Commits Page Improvements
+- [x] Search by message or SHA
+- [x] Filter by author
+- [x] Commits grouped by date
+- [x] Stats bar (commits count, contributors)
+- [x] Better commit cards with avatars
+- [x] Merge commit badges
+- [x] Relative time formatting
+
+### Repositories Page Improvements
+- [x] Stats cards with clickable filters (all/public/private/fork/source)
+- [x] Search by name, description, topics
+- [x] Filter by language
+- [x] Sort options (updated, stars, forks, name, created)
+- [x] List and Grid view modes
+- [x] Topic tags display
+- [x] Quick links to File Browser and Git Graph
+- [x] Language color indicators
