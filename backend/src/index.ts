@@ -16,6 +16,10 @@ import issueRoutes from './routes/issues';
 import pullRoutes from './routes/pulls';
 import workflowRoutes from './routes/workflows';
 import statsRoutes from './routes/stats';
+import searchRoutes from './routes/search';
+import filesRoutes from './routes/files';
+import trafficRoutes from './routes/traffic';
+import orgsRoutes from './routes/orgs';
 
 // ES Module fix for __dirname
 const __filename = fileURLToPath(import.meta.url);
@@ -189,6 +193,10 @@ app.use('/api/issues', issueRoutes);
 app.use('/api/pulls', pullRoutes);
 app.use('/api/workflows', workflowRoutes);
 app.use('/api/stats', statsRoutes);
+app.use('/api/search', searchRoutes);
+app.use('/api/files', filesRoutes);
+app.use('/api/traffic', trafficRoutes);
+app.use('/api/orgs', orgsRoutes);
 
 // Start server
 httpServer.listen(PORT, () => {

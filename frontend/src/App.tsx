@@ -11,6 +11,11 @@ import Branches from './pages/Branches';
 import Workflows from './pages/Workflows';
 import Contributors from './pages/Contributors';
 import Login from './pages/Login';
+import PRReview from './pages/PRReview';
+import CodeSearch from './pages/CodeSearch';
+import FileBrowser from './pages/FileBrowser';
+import Traffic from './pages/Traffic';
+import Organization from './pages/Organization';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 
 // Create a client
@@ -60,10 +65,15 @@ function App() {
                 <Route path="repositories" element={<Repositories />} />
                 <Route path="commits" element={<Commits />} />
                 <Route path="pull-requests" element={<PullRequests />} />
+                <Route path="pull-requests/:owner/:repo/:pullNumber" element={<PRReview />} />
                 <Route path="issues" element={<Issues />} />
                 <Route path="branches" element={<Branches />} />
                 <Route path="workflows" element={<Workflows />} />
                 <Route path="contributors" element={<Contributors />} />
+                <Route path="search" element={<CodeSearch />} />
+                <Route path="files" element={<FileBrowser />} />
+                <Route path="traffic" element={<Traffic />} />
+                <Route path="organization" element={<Organization />} />
               </Route>
             </Routes>
           </div>
