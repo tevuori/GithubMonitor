@@ -8,6 +8,12 @@ import { createServer } from 'http';
 import { Server as SocketIOServer } from 'socket.io';
 import dotenv from 'dotenv';
 import repoRoutes from './routes/repos';
+import commitRoutes from './routes/commits';
+import branchRoutes from './routes/branches';
+import issueRoutes from './routes/issues';
+import pullRoutes from './routes/pulls';
+import workflowRoutes from './routes/workflows';
+
 
 // Load environment variables
 dotenv.config();
@@ -170,6 +176,12 @@ app.get('/auth/me', (req, res) => {
 
 // API routes placeholder
 app.use('/api/repos', repoRoutes);
+app.use('/api/commits', commitRoutes);
+app.use('/api/branches', branchRoutes);
+app.use('/api/issues', issueRoutes);
+app.use('/api/pulls', pullRoutes);
+app.use('/api/workflows', workflowRoutes);
+
 
 // Start server
 httpServer.listen(PORT, () => {

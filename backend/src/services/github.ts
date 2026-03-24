@@ -1,30 +1,37 @@
-import { Octokit } from '@octokit/rest';
-
-export function getOctokit(accessToken: string) {
-  return new Octokit({ auth: accessToken });
+export async function getRepoCommits(accessToken: string, owner: string, repo: string) {
+  const octokit = getOctokit(accessToken);
+  const { data } = await octokit.repos.listCommits({ owner, repo, per_page: 30 });
+  return data;
 }
 
-export async function getUserRepos(accessToken: string) {
+export async function getRepoBranches(accessToken: string, owner: string, repo: string) {
   const octokit = getOctokit(accessToken);
-  const { data } = await octokit.repos.listForAuthenticatedUser({
-    sort: 'updated',
-    per_page: 50
+  const { data } = await octokit.repos.listBranches({ owner, repo, per_page: 50 });
+  return data;
+}
+
+export async function getUserIssues(accessToken: string) {
+  const octokit = getOctokit(accessToken);
+  const { data } = await octokit.issues.listForAuthenticatedUser({
+    state: 'open', sort: 'updated', per_page: 50
   });
   return data;
 }
 
-export async function getRepoStats(accessToken: string, owner: string, repo: string) {
+export async function getUserPullRequests(accessToken: string) {
   const octokit = getOctokit(accessToken);
-  const [repoData, commits, issues, pulls] = await Promise.all([
-    octokit.repos.get({ owner, repo }),
-    octokit.repos.listCommits({ owner, repo, per_page: 10 }),
-    octokit.issues.listForRepo({ owner, repo, state: 'open' }),
-    octokit.pulls.list({ owner, repo, state: 'open' })
-  ]);
-  return {
-    repo: repoData.data,
-    recentCommits: commits.data,
-    openIssues: issues.data,
-    openPulls: pulls.data
-  };
+  const { data } = await octokit.search.issuesAndPullRequests({
+    q: 'is:pr is:open author:@me',
+    sort: 'updated',
+    per_page: 30
+  });
+  return data.items;
+}
+
+export async function getRepoWorkflowRuns(accessToken: string, owner: string, repo: string) {
+  const octokit = getOctokit(accessToken);
+  const { data } = await octokit.actions.listWorkflowRunsForRepo({
+    owner, repo, per_page: 20
+  });
+  return data.workflow_runs;
 }
