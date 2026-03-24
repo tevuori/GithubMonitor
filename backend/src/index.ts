@@ -7,7 +7,8 @@ import { Strategy as GitHubStrategy } from 'passport-github2';
 import { createServer } from 'http';
 import { Server as SocketIOServer } from 'socket.io';
 import dotenv from 'dotenv';
-import path from 'path';
+import { fileURLToPath } from 'url';
+import { dirname, resolve } from 'path';
 import repoRoutes from './routes/repos';
 import commitRoutes from './routes/commits';
 import branchRoutes from './routes/branches';
@@ -16,9 +17,13 @@ import pullRoutes from './routes/pulls';
 import workflowRoutes from './routes/workflows';
 import statsRoutes from './routes/stats';
 
-// Load environment variables from root .env or backend .env
-dotenv.config({ path: path.resolve(__dirname, '../.env') });
-dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+// ES Module fix for __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// Load environment variables from backend .env or root .env
+dotenv.config({ path: resolve(__dirname, '../.env') });
+dotenv.config({ path: resolve(__dirname, '../../.env') });
 
 // Initialize Express app
 const app = express();
