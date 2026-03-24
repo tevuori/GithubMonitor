@@ -80,11 +80,9 @@ app.use(cors({
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
     
-    // Allow all localhost origins in development
-    if (process.env.NODE_ENV === 'development') {
-      if (origin.startsWith('http://localhost:')) {
-        return callback(null, true);
-      }
+    // Allow all localhost origins in development (any port)
+    if (origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:')) {
+      return callback(null, true);
     }
     
     // In production, use configured origin
@@ -93,7 +91,14 @@ app.use(cors({
       return callback(null, true);
     }
     
-    // Origin not allowed
+    // For development, be more permissive - log but allow
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`CORS: Allowing origin ${origin} in development mode`);
+      return callback(null, true);
+    }
+    
+    // Origin not allowed in production
+    console.error(`CORS: Blocked origin ${origin}`);
     callback(new Error('Not allowed by CORS'));
   },
   credentials: true
