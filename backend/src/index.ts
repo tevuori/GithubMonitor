@@ -30,6 +30,7 @@ import dependenciesRoutes from './routes/dependencies';
 import milestonesRoutes from './routes/milestones';
 import profileRoutes from './routes/profile';
 import reportsRoutes from './routes/reports';
+import envRoutes from './routes/env';
 
 // ES Module fix for __dirname
 const __filename = fileURLToPath(import.meta.url);
@@ -50,23 +51,16 @@ const httpServer = createServer(app);
 const io = new SocketIOServer(httpServer, {
   cors: {
     origin: (origin, callback) => {
-      // Allow requests with no origin (like mobile apps or curl requests)
       if (!origin) return callback(null, true);
-      
-      // Allow all localhost origins in development
       if (process.env.NODE_ENV === 'development') {
         if (origin.startsWith('http://localhost:')) {
           return callback(null, true);
         }
       }
-      
-      // In production, use configured origin
       const allowedOrigin = process.env.CORS_ORIGIN;
       if (allowedOrigin && origin === allowedOrigin) {
         return callback(null, true);
       }
-      
-      // Origin not allowed
       callback(new Error('Not allowed by CORS'));
     },
     credentials: true
@@ -77,27 +71,18 @@ const io = new SocketIOServer(httpServer, {
 app.use(helmet());
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
-    
-    // Allow all localhost origins in development (any port)
     if (origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:')) {
       return callback(null, true);
     }
-    
-    // In production, use configured origin
     const allowedOrigin = process.env.CORS_ORIGIN;
     if (allowedOrigin && origin === allowedOrigin) {
       return callback(null, true);
     }
-    
-    // For development, be more permissive - log but allow
     if (process.env.NODE_ENV !== 'production') {
       console.log(`CORS: Allowing origin ${origin} in development mode`);
       return callback(null, true);
     }
-    
-    // Origin not allowed in production
     console.error(`CORS: Blocked origin ${origin}`);
     callback(new Error('Not allowed by CORS'));
   },
@@ -129,7 +114,6 @@ passport.use(new GitHubStrategy({
   callbackURL: process.env.GITHUB_CALLBACK_URL || 'http://localhost:3000/auth/github/callback',
   scope: ['user:email', 'read:org', 'repo']
 }, (accessToken: string, _refreshToken: string, profile: any, done: any) => {
-  // Store the access token with the user profile
   profile.accessToken = accessToken;
   return done(null, profile);
 }));
@@ -145,16 +129,13 @@ passport.deserializeUser((user: any, done) => {
 // Socket.io connection handling
 io.on('connection', (socket) => {
   console.log('Client connected:', socket.id);
-  
   socket.on('disconnect', () => {
     console.log('Client disconnected:', socket.id);
   });
-  
   socket.on('subscribe:repo', (repoId: string) => {
     socket.join(`repo:${repoId}`);
     console.log(`Client ${socket.id} subscribed to repo ${repoId}`);
   });
-  
   socket.on('unsubscribe:repo', (repoId: string) => {
     socket.leave(`repo:${repoId}`);
     console.log(`Client ${socket.id} unsubscribed from repo ${repoId}`);
@@ -169,6 +150,9 @@ app.get('/', (_req, res) => {
     status: 'running'
   });
 });
+
+// Env management routes (must be before auth so setup works without credentials)
+app.use('/api/env', envRoutes);
 
 // Auth routes
 app.get('/auth/github', passport.authenticate('github'));
@@ -192,7 +176,6 @@ app.get('/auth/logout', (_req, res) => {
 app.get('/auth/me', (req, res) => {
   if (req.isAuthenticated()) {
     const user = req.user as any;
-    // Don't send the access token to the client
     const { accessToken, ...safeUser } = user;
     res.json(safeUser);
   } else {
@@ -200,7 +183,7 @@ app.get('/auth/me', (req, res) => {
   }
 });
 
-// API routes placeholder
+// API routes
 app.use('/api/repos', repoRoutes);
 app.use('/api/commits', commitRoutes);
 app.use('/api/branches', branchRoutes);
