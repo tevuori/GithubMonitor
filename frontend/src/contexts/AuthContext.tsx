@@ -41,7 +41,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const checkAuth = async () => {
     try {
       const response = await api.get('/auth/me');
-      setUser(response.data);
+      const raw = response.data as any;
+
+      // Map GitHub profile payload from passport-github2 to our User shape
+      const mapped: User = {
+        id: raw.id,
+        username: raw.username || raw.login,
+        displayName: raw.displayName || raw.username || raw.login,
+        avatarUrl:
+          raw.avatarUrl ||
+          (Array.isArray(raw.photos) && raw.photos.length > 0 ? raw.photos[0].value : undefined) ||
+          raw._json?.avatar_url,
+        profileUrl: raw.profileUrl || raw.profileUrl || raw._json?.html_url,
+      };
+
+      setUser(mapped);
     } catch (error) {
       setUser(null);
     } finally {
