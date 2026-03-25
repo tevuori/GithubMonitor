@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../services/api';
+import toast from 'react-hot-toast';
 
 interface Issue {
   id: number;
@@ -62,6 +63,12 @@ const Issues: React.FC = () => {
   const [issueState, setIssueState] = useState<'open' | 'closed' | 'all'>('open');
   const [searchTerm, setSearchTerm] = useState('');
 
+  const [showCreate, setShowCreate] = useState(false);
+  const [newTitle, setNewTitle] = useState('');
+  const [newBody, setNewBody] = useState('');
+
+  const queryClient = useQueryClient();
+
   // Fetch repos
   const { data: repos } = useQuery<Repository[]>({
     queryKey: ['repos'],
@@ -76,6 +83,28 @@ const Issues: React.FC = () => {
   }, [repos, selectedRepo]);
 
   const [owner, repo] = selectedRepo.split('/');
+
+  const createIssueMutation = useMutation({
+    mutationFn: async () => {
+      if (!owner || !repo) throw new Error('No repository selected');
+      if (!newTitle.trim()) throw new Error('Title is required');
+      const payload: any = { title: newTitle.trim() };
+      if (newBody.trim()) payload.body = newBody;
+      const res = await api.post(`/api/issues/${owner}/${repo}`, payload);
+      return res.data as Issue;
+    },
+    onSuccess: (created) => {
+      toast.success(`Issue #${created.number} created`);
+      queryClient.invalidateQueries({ queryKey: ['repoIssues', owner, repo] });
+      setShowCreate(false);
+      setNewTitle('');
+      setNewBody('');
+      setSelectedIssue({ owner, repo, number: created.number });
+    },
+    onError: (err: any) => {
+      toast.error(err?.response?.data?.error || err?.message || 'Failed to create issue');
+    },
+  });
 
   // Fetch issues for selected repo
   const { data: issues, isLoading: issuesLoading } = useQuery<Issue[]>({
@@ -99,8 +128,8 @@ const Issues: React.FC = () => {
   });
 
   // Filter issues by search
-  const filteredIssues = issues?.filter(issue => 
-    searchTerm === '' || 
+  const filteredIssues = issues?.filter(issue =>
+    searchTerm === '' ||
     issue.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     issue.number.toString().includes(searchTerm)
   );
@@ -123,8 +152,7 @@ const Issues: React.FC = () => {
   // Simple markdown-like rendering
   const renderBody = (body: string | null) => {
     if (!body) return <p className="text-gray-500 italic">No description provided.</p>;
-    
-    // Basic rendering - convert code blocks, links, and newlines
+
     const rendered = body
       .replace(/```(\w+)?\n([\s\S]*?)```/g, '<pre class="bg-gray-100 p-3 rounded-lg my-2 overflow-x-auto text-sm font-mono">$2</pre>')
       .replace(/`([^`]+)`/g, '<code class="bg-gray-100 px-1.5 py-0.5 rounded text-sm">$1</code>')
@@ -137,7 +165,7 @@ const Issues: React.FC = () => {
       .replace(/^- (.+)$/gm, '<li class="ml-4">$1</li>')
       .replace(/\n\n/g, '</p><p class="mt-3">')
       .replace(/\n/g, '<br/>');
-    
+
     return <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: `<p>${rendered}</p>` }} />;
   };
 
@@ -149,21 +177,90 @@ const Issues: React.FC = () => {
           <h1 className="text-2xl font-bold text-gray-900">Issues</h1>
           <p className="mt-1 text-sm text-gray-500">Track and manage issues for your repositories</p>
         </div>
-        <select 
-          className="px-4 py-2 border border-gray-300 rounded-lg bg-white"
-          value={selectedRepo} 
-          onChange={e => {
-            setSelectedRepo(e.target.value);
-            setSelectedIssue(null);
-          }}
-          data-testid="repo-selector"
-        >
-          <option value="">Select a repository</option>
-          {repos?.map((r) => (
-            <option key={r.id} value={r.full_name}>{r.full_name}</option>
-          ))}
-        </select>
+
+        <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
+          <select
+            className="px-4 py-2 border border-gray-300 rounded-lg bg-white"
+            value={selectedRepo}
+            onChange={e => {
+              setSelectedRepo(e.target.value);
+              setSelectedIssue(null);
+              setShowCreate(false);
+            }}
+            data-testid="repo-selector"
+          >
+            <option value="">Select a repository</option>
+            {repos?.map((r) => (
+              <option key={r.id} value={r.full_name}>{r.full_name}</option>
+            ))}
+          </select>
+
+          <button
+            type="button"
+            onClick={() => setShowCreate(v => !v)}
+            disabled={!owner || !repo}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 disabled:opacity-50"
+            data-testid="new-issue-btn"
+          >
+            {showCreate ? 'Close' : 'New issue'}
+          </button>
+        </div>
       </div>
+
+      {/* Create issue */}
+      {showCreate && owner && repo && (
+        <div className="bg-white rounded-lg shadow p-4" data-testid="create-issue-panel">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-lg font-semibold text-gray-900">Create issue</h2>
+            <span className="text-xs text-gray-500 font-mono">{owner}/{repo}</span>
+          </div>
+
+          <div className="grid grid-cols-1 gap-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+              <input
+                value={newTitle}
+                onChange={e => setNewTitle(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                placeholder="Short summary"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Body (optional)</label>
+              <textarea
+                value={newBody}
+                onChange={e => setNewBody(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg min-h-[120px]"
+                placeholder="Describe the problem / task…"
+              />
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => createIssueMutation.mutate()}
+                disabled={createIssueMutation.isPending}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 disabled:opacity-50"
+                data-testid="create-issue-submit"
+              >
+                {createIssueMutation.isPending ? 'Creating…' : 'Create'}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowCreate(false);
+                  setNewTitle('');
+                  setNewBody('');
+                }}
+                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Filters */}
       {selectedRepo && (
@@ -237,7 +334,7 @@ const Issues: React.FC = () => {
 
           <div className="divide-y divide-gray-100">
             {filteredIssues?.map((issue) => (
-              <div 
+              <div
                 key={issue.id}
                 className={`px-4 py-3 hover:bg-gray-50 cursor-pointer transition-colors ${
                   selectedIssue?.number === issue.number ? 'bg-blue-50 border-l-2 border-l-blue-500' : ''
@@ -263,12 +360,12 @@ const Issues: React.FC = () => {
                     <div className="flex flex-wrap items-center gap-2 mt-1">
                       <span className="text-xs text-gray-500">#{issue.number}</span>
                       {issue.labels?.slice(0, 3).map((label) => (
-                        <span 
+                        <span
                           key={label.id}
                           className="px-1.5 py-0.5 rounded-full text-xs"
-                          style={{ 
-                            backgroundColor: `#${label.color}22`, 
-                            color: `#${label.color}` 
+                          style={{
+                            backgroundColor: `#${label.color}22`,
+                            color: `#${label.color}`
                           }}
                         >
                           {label.name}
@@ -338,7 +435,7 @@ const Issues: React.FC = () => {
                       <div>
                         <span className="text-gray-500">Labels: </span>
                         {issueDetails.labels.map((label: any) => (
-                          <span 
+                          <span
                             key={label.id}
                             className="px-2 py-0.5 rounded-full text-xs ml-1"
                             style={{ backgroundColor: `#${label.color}22`, color: `#${label.color}` }}

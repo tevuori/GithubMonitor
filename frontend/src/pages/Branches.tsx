@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../services/api';
 import GitGraph from '../components/GitGraph';
 import type { GitGraphData } from '../types/gitGraph';
+import toast from 'react-hot-toast';
 
 interface Repository {
   id: number;
@@ -13,9 +14,22 @@ interface Repository {
   };
 }
 
+interface BranchListItem {
+  name: string;
+  protected: boolean;
+}
+
+interface BranchResponse {
+  branches: BranchListItem[];
+  defaultBranch: string;
+}
+
 const Branches = () => {
   const [selectedRepo, setSelectedRepo] = useState<Repository | null>(null);
   const [perPage, setPerPage] = useState(50);
+  const [showBranchManager, setShowBranchManager] = useState(false);
+
+  const queryClient = useQueryClient();
 
   // Fetch user's repositories
   const { data: repos, isLoading: reposLoading } = useQuery<Repository[]>({
@@ -32,6 +46,40 @@ const Branches = () => {
       setSelectedRepo(repos[0]);
     }
   }, [repos, selectedRepo]);
+
+  // Fetch repo branches (for delete + default branch info)
+  const {
+    data: branchesData,
+    isLoading: branchesLoading,
+    error: branchesError,
+    refetch: refetchBranches,
+  } = useQuery<BranchResponse>({
+    queryKey: ['branchesList', selectedRepo?.owner.login, selectedRepo?.name],
+    queryFn: async () => {
+      if (!selectedRepo) throw new Error('No repo selected');
+      const res = await api.get(`/api/branches/${selectedRepo.owner.login}/${selectedRepo.name}`);
+      return res.data;
+    },
+    enabled: !!selectedRepo,
+  });
+
+  const deleteBranchMutation = useMutation({
+    mutationFn: async (branchName: string) => {
+      if (!selectedRepo) throw new Error('No repo selected');
+      await api.delete(
+        `/api/branches/${selectedRepo.owner.login}/${selectedRepo.name}/${encodeURIComponent(branchName)}`
+      );
+    },
+    onSuccess: async () => {
+      toast.success('Branch deleted');
+      queryClient.invalidateQueries({ queryKey: ['branchesList', selectedRepo?.owner.login, selectedRepo?.name] });
+      queryClient.invalidateQueries({ queryKey: ['gitGraph', selectedRepo?.owner.login, selectedRepo?.name] });
+      await Promise.all([refetchBranches(), refetch()]);
+    },
+    onError: (err: any) => {
+      toast.error(err?.response?.data?.error || 'Failed to delete branch');
+    },
+  });
 
   // Fetch git graph data for selected repo
   const { data: graphData, isLoading: graphLoading, error: graphError, refetch } = useQuery<GitGraphData>({
@@ -54,13 +102,16 @@ const Branches = () => {
     );
   }
 
+  const defaultBranch = branchesData?.defaultBranch || '';
+  const branchList = branchesData?.branches || [];
+
   return (
     <div className="h-full flex flex-col bg-white dark:bg-gray-900" data-testid="branches-page">
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
         <div className="flex items-center gap-4">
           <h1 className="text-xl font-semibold text-gray-900 dark:text-white">Git Graph</h1>
-          
+
           {/* Repository Selector */}
           <select
             data-testid="repo-selector"
@@ -69,6 +120,7 @@ const Branches = () => {
             onChange={(e) => {
               const repo = repos?.find(r => r.full_name === e.target.value);
               setSelectedRepo(repo || null);
+              setShowBranchManager(false);
             }}
           >
             {repos?.map((repo) => (
@@ -96,10 +148,27 @@ const Branches = () => {
             </select>
           </div>
 
+          {/* Branch manager */}
+          <button
+            data-testid="branch-manager-btn"
+            onClick={() => setShowBranchManager(v => !v)}
+            className="px-3 py-1.5 bg-white dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg transition-colors flex items-center gap-2 border border-gray-200 dark:border-gray-600"
+            disabled={!selectedRepo}
+            title="Manage branches"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 3v12m0 0a3 3 0 106 0m-6 0a3 3 0 016 0m6-12v6m0 0a3 3 0 106 0m-6 0a3 3 0 016 0" />
+            </svg>
+            Branches
+          </button>
+
           {/* Refresh button */}
           <button
             data-testid="refresh-btn"
-            onClick={() => refetch()}
+            onClick={() => {
+              refetch();
+              refetchBranches();
+            }}
             className="px-3 py-1.5 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg transition-colors flex items-center gap-2"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -109,6 +178,91 @@ const Branches = () => {
           </button>
         </div>
       </div>
+
+      {/* Branch Manager */}
+      {showBranchManager && selectedRepo && (
+        <div className="border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-200">Branch manager</h2>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                Default branch: <span className="font-mono">{defaultBranch || '—'}</span>
+              </p>
+            </div>
+            <button
+              onClick={() => setShowBranchManager(false)}
+              className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+              title="Close"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+
+          {branchesLoading ? (
+            <div className="py-4 text-sm text-gray-500">Loading branches…</div>
+          ) : branchesError ? (
+            <div className="py-4 text-sm text-red-600">Failed to load branches.</div>
+          ) : branchList.length === 0 ? (
+            <div className="py-4 text-sm text-gray-500">No branches found.</div>
+          ) : (
+            <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-2">
+              {branchList.map((b) => {
+                const isDefault = defaultBranch !== '' && b.name === defaultBranch;
+                const canDelete = !b.protected && !isDefault;
+                return (
+                  <div
+                    key={b.name}
+                    className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700"
+                  >
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-sm text-gray-800 dark:text-gray-200 truncate">{b.name}</span>
+                        {b.protected && (
+                          <span className="px-1.5 py-0.5 text-xs bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 rounded">
+                            protected
+                          </span>
+                        )}
+                        {isDefault && (
+                          <span className="px-1.5 py-0.5 text-xs bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-400 rounded">
+                            default
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!canDelete) return;
+                        if (!confirm(`Delete branch "${b.name}"?`)) return;
+                        deleteBranchMutation.mutate(b.name);
+                      }}
+                      disabled={!canDelete || deleteBranchMutation.isPending}
+                      className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+                        canDelete
+                          ? 'bg-red-600 hover:bg-red-500 text-white'
+                          : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                      }`}
+                      title={
+                        b.protected
+                          ? 'Protected branch cannot be deleted'
+                          : isDefault
+                          ? 'Default branch cannot be deleted'
+                          : 'Delete branch'
+                      }
+                      data-testid={`delete-branch-${b.name}`}
+                    >
+                      {deleteBranchMutation.isPending ? 'Deleting…' : 'Delete'}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Stats Bar */}
       {graphData && (
