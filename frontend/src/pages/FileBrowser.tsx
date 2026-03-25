@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
 import api from '../services/api';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
 interface FileItem {
   name: string;
@@ -242,16 +244,32 @@ const FileBrowser = () => {
                 </div>
               ) : fileContent?.decodedContent ? (
                 <div className="overflow-auto max-h-[600px]">
-                  <pre className="p-4 text-sm font-mono bg-gray-50">
-                    {fileContent.decodedContent.split('\n').map((line: string, i: number) => (
-                      <div key={i} className="flex hover:bg-yellow-50">
-                        <span className="select-none text-gray-400 pr-4 text-right w-12">
-                          {i + 1}
-                        </span>
-                        <code>{line}</code>
-                      </div>
-                    ))}
-                  </pre>
+                  <div className="flex items-center justify-between px-4 py-2 bg-gray-100 border-b border-gray-200 text-xs text-gray-500">
+                    <span className="font-mono">{selectedFile.name}</span>
+                    <span className="uppercase tracking-wide font-mono">
+                      {getLanguage(selectedFile.name)}
+                    </span>
+                  </div>
+                  <SyntaxHighlighter
+                    language={getLanguage(selectedFile.name)}
+                    style={oneLight}
+                    showLineNumbers
+                    lineNumberStyle={{
+                      minWidth: '3em',
+                      color: '#9ca3af',
+                      userSelect: 'none',
+                    }}
+                    customStyle={{
+                      margin: 0,
+                      borderRadius: 0,
+                      fontSize: '0.875rem',
+                      maxHeight: '600px',
+                      background: '#ffffff',
+                    }}
+                    wrapLongLines={false}
+                  >
+                    {fileContent.decodedContent}
+                  </SyntaxHighlighter>
                 </div>
               ) : (
                 <div className="p-4 text-center text-gray-500">
