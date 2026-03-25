@@ -28,6 +28,7 @@ import Milestones from './pages/Milestones';
 import Profile from './pages/Profile';
 import Reports from './pages/Reports';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { ThemeProvider } from './contexts/ThemeContext';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -60,48 +61,50 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <Router>
-        <AuthProvider>
-          <div className="min-h-screen bg-background text-foreground">
-            <Toaster position="top-right" />
-            <Routes>
-              <Route path="/login" element={<Login />} />
-              <Route path="/" element={
-                <ProtectedRoute>
-                  <Layout />
-                </ProtectedRoute>
-              }>
-                <Route index element={<Dashboard />} />
-                <Route path="repositories" element={<Repositories />} />
-                <Route path="commits" element={<Commits />} />
-                <Route path="pull-requests" element={<PullRequests />} />
-                <Route path="pull-requests/:owner/:repo/:pullNumber" element={<PRReview />} />
-                <Route path="issues" element={<Issues />} />
-                <Route path="branches" element={<Branches />} />
-                <Route path="workflows" element={<Workflows />} />
-                <Route path="contributors" element={<Contributors />} />
-                <Route path="search" element={<CodeSearch />} />
-                <Route path="files" element={<FileBrowser />} />
-                <Route path="traffic" element={<Traffic />} />
-                <Route path="organization" element={<Organization />} />
-                <Route path="diff" element={<DiffViewer />} />
-                <Route path="releases" element={<Releases />} />
-                <Route path="insights" element={<Insights />} />
-                <Route path="security" element={<Security />} />
-                <Route path="notifications" element={<Notifications />} />
-                <Route path="settings" element={<Settings />} />
-                <Route path="dependencies" element={<Dependencies />} />
-                <Route path="activity" element={<ActivityFeed />} />
-                <Route path="milestones" element={<Milestones />} />
-                <Route path="profile" element={<Profile />} />
-                <Route path="reports" element={<Reports />} />
-              </Route>
-            </Routes>
-          </div>
-        </AuthProvider>
-      </Router>
-    </QueryClientProvider>
+    <ThemeProvider>
+      <QueryClientProvider client={queryClient}>
+        <Router>
+          <AuthProvider>
+            <div className="min-h-screen bg-background text-foreground">
+              <Toaster position="top-right" />
+              <Routes>
+                <Route path="/login" element={<Login />} />
+                <Route path="/" element={
+                  <ProtectedRoute>
+                    <Layout />
+                  </ProtectedRoute>
+                }>
+                  <Route index element={<Dashboard />} />
+                  <Route path="repositories" element={<Repositories />} />
+                  <Route path="commits" element={<Commits />} />
+                  <Route path="pull-requests" element={<PullRequests />} />
+                  <Route path="pull-requests/:owner/:repo/:pullNumber" element={<PRReview />} />
+                  <Route path="issues" element={<Issues />} />
+                  <Route path="branches" element={<Branches />} />
+                  <Route path="workflows" element={<Workflows />} />
+                  <Route path="contributors" element={<Contributors />} />
+                  <Route path="search" element={<CodeSearch />} />
+                  <Route path="files" element={<FileBrowser />} />
+                  <Route path="traffic" element={<Traffic />} />
+                  <Route path="organization" element={<Organization />} />
+                  <Route path="diff" element={<DiffViewer />} />
+                  <Route path="releases" element={<Releases />} />
+                  <Route path="insights" element={<Insights />} />
+                  <Route path="security" element={<Security />} />
+                  <Route path="notifications" element={<Notifications />} />
+                  <Route path="settings" element={<Settings />} />
+                  <Route path="dependencies" element={<Dependencies />} />
+                  <Route path="activity" element={<ActivityFeed />} />
+                  <Route path="milestones" element={<Milestones />} />
+                  <Route path="profile" element={<Profile />} />
+                  <Route path="reports" element={<Reports />} />
+                </Route>
+              </Routes>
+            </div>
+          </AuthProvider>
+        </Router>
+      </QueryClientProvider>
+    </ThemeProvider>
   );
 }
 
