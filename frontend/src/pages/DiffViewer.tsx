@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import api from '../services/api';
 
@@ -14,7 +14,7 @@ interface CompareResult {
   ahead_by: number;
   behind_by: number;
   total_commits: number;
-  commits: Array<{
+  commits?: Array<{
     sha: string;
     shortSha: string;
     message: string;
@@ -26,7 +26,7 @@ interface CompareResult {
     };
     htmlUrl: string;
   }>;
-  files: Array<{
+  files?: Array<{
     sha: string;
     filename: string;
     status: string;
@@ -45,7 +45,7 @@ interface Branch {
   protected: boolean;
 }
 
-const DiffViewer = () => {
+const DiffViewerInner = () => {
   const [selectedRepo, setSelectedRepo] = useState<Repository | null>(null);
   const [base, setBase] = useState<string>('');
   const [head, setHead] = useState<string>('');
@@ -177,6 +177,9 @@ const DiffViewer = () => {
     );
   }
 
+  const safeCommits = comparison?.commits || [];
+  const safeFiles = comparison?.files || [];
+
   return (
     <div className="space-y-6" data-testid="diff-viewer-page">
       <div className="flex items-center justify-between">
@@ -292,20 +295,20 @@ const DiffViewer = () => {
               <span className="text-green-600">+{comparison.ahead_by} ahead</span>
               <span className="text-red-600">-{comparison.behind_by} behind</span>
               <span className="text-gray-600">{comparison.total_commits} commits</span>
-              <span className="text-gray-600">{comparison.files.length} files changed</span>
+              <span className="text-gray-600">{safeFiles.length} files changed</span>
             </div>
           </div>
         </div>
       )}
 
       {/* Commits */}
-      {comparison && comparison.commits.length > 0 && (
+      {comparison && safeCommits.length > 0 && (
         <div className="bg-white rounded-lg shadow">
           <div className="px-4 py-3 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900">Commits ({comparison.commits.length})</h2>
+            <h2 className="text-lg font-semibold text-gray-900">Commits ({safeCommits.length})</h2>
           </div>
           <div className="divide-y divide-gray-100 max-h-64 overflow-y-auto">
-            {comparison.commits.map((commit) => (
+            {safeCommits.map((commit) => (
               <div key={commit.sha} className="px-4 py-3 flex items-center gap-3 hover:bg-gray-50">
                 {commit.author?.avatar ? (
                   <img src={commit.author.avatar} alt={commit.author.name || commit.author.login} className="w-8 h-8 rounded-full" />
@@ -335,21 +338,21 @@ const DiffViewer = () => {
       )}
 
       {/* Files Changed */}
-      {comparison && comparison.files.length > 0 && (
+      {comparison && safeFiles.length > 0 && (
         <div className="bg-white rounded-lg shadow">
           <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-900">Files Changed ({comparison.files.length})</h2>
+            <h2 className="text-lg font-semibold text-gray-900">Files Changed ({safeFiles.length})</h2>
             <div className="flex items-center gap-4 text-sm">
               <span className="text-green-600">
-                +{comparison.files.reduce((sum, f) => sum + f.additions, 0)}
+                +{safeFiles.reduce((sum, f) => sum + f.additions, 0)}
               </span>
               <span className="text-red-600">
-                -{comparison.files.reduce((sum, f) => sum + f.deletions, 0)}
+                -{safeFiles.reduce((sum, f) => sum + f.deletions, 0)}
               </span>
             </div>
           </div>
           <div className="divide-y divide-gray-100">
-            {comparison.files.map((file) => (
+            {safeFiles.map((file) => (
               <div key={file.filename}>
                 <div
                   className="px-4 py-3 flex items-center gap-3 cursor-pointer hover:bg-gray-50"
@@ -417,5 +420,37 @@ const DiffViewer = () => {
     </div>
   );
 };
+
+class DiffViewerErrorBoundary extends React.Component<{ children: any }, { hasError: boolean }> {
+  constructor(props: { children: any }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: any, info: any) {
+    console.error('DiffViewer rendering error:', error, info);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="bg-red-50 rounded-lg p-4 text-red-700">
+          Something went wrong while rendering the Diff Viewer. Check the browser console for details.
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+const DiffViewer = () => (
+  <DiffViewerErrorBoundary>
+    <DiffViewerInner />
+  </DiffViewerErrorBoundary>
+);
 
 export default DiffViewer;
