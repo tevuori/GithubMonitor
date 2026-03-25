@@ -53,7 +53,7 @@ const DiffViewer = () => {
   const [expandedFiles, setExpandedFiles] = useState<Set<string>>(new Set());
 
   // Fetch repos
-  const { data: repos, isLoading: reposLoading } = useQuery<Repository[]>({
+  const { data: repos, isLoading: reposLoading, isError: reposError } = useQuery<Repository[]>({
     queryKey: ['repos'],
     queryFn: async () => {
       const res = await api.get('/api/repos');
@@ -69,7 +69,7 @@ const DiffViewer = () => {
   }, [repos, selectedRepo]);
 
   // Fetch branches
-  const { data: branches } = useQuery<Branch[]>({
+  const { data: branches, isLoading: branchesLoading, isError: branchesError } = useQuery<Branch[]>({
     queryKey: ['branches', selectedRepo?.owner.login, selectedRepo?.name],
     queryFn: async () => {
       if (!selectedRepo) return [];
@@ -94,8 +94,8 @@ const DiffViewer = () => {
   }, [branches, base, head]);
 
   // Fetch comparison
-  const { data: comparison, isLoading: comparing, error } = useQuery<CompareResult>({
-    queryKey: ['compare', selectedRepo?.owner.login, selectedRepo?.name, base, head],
+  const { data: comparison, isLoading: comparing, error: compareError } = useQuery<CompareResult>({
+    queryKey: ['compare', selectedRepo?.owner.login, selectedRepo?.name, base, head, viewMode],
     queryFn: async () => {
       if (!selectedRepo || !base || !head) throw new Error('Missing params');
       const res = await api.get(`/api/compare/${selectedRepo.owner.login}/${selectedRepo.name}/branches`, {
@@ -131,7 +131,7 @@ const DiffViewer = () => {
 
     const lines = patch.split('\n');
     return (
-      <div className="font-mono text-xs overflow-x-auto">
+      <div className={`font-mono text-xs overflow-x-auto ${viewMode === 'split' ? 'grid grid-cols-2' : ''}`}>
         {lines.map((line, idx) => {
           let bgColor = 'bg-white';
           let textColor = 'text-gray-700';
@@ -146,9 +146,7 @@ const DiffViewer = () => {
             textColor = 'text-blue-700';
           }
           return (
-            <div key={idx} className={`${bgColor} ${textColor} px-4 py-0.5 whitespace-pre`}>
-              {line}
-            </div>
+            <div key={idx} className={`${bgColor} ${textColor} px-4 py-0.5 whitespace-pre`}>{line}</div>
           );
         })}
       </div>
@@ -159,6 +157,22 @@ const DiffViewer = () => {
     return (
       <div className="flex items-center justify-center h-64" data-testid="diff-loading">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
+
+  if (reposError) {
+    return (
+      <div className="bg-red-50 rounded-lg p-4 text-red-700" data-testid="diff-repos-error">
+        Failed to load repositories. Please check your connection and authentication.
+      </div>
+    );
+  }
+
+  if (!repos || repos.length === 0) {
+    return (
+      <div className="bg-white rounded-lg shadow p-8 text-center text-gray-600" data-testid="diff-no-repos">
+        No repositories available. Connect your GitHub account and ensure you have access to at least one repository.
       </div>
     );
   }
@@ -178,15 +192,15 @@ const DiffViewer = () => {
             <select
               data-testid="diff-repo-selector"
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              value={selectedRepo?.full_name || ''}
+              value={selectedRepo?.full_name || repos[0].full_name}
               onChange={(e) => {
-                const repo = repos?.find(r => r.full_name === e.target.value);
-                setSelectedRepo(repo || null);
+                const repo = repos.find(r => r.full_name === e.target.value) || null;
+                setSelectedRepo(repo);
                 setBase('');
                 setHead('');
               }}
             >
-              {repos?.map((repo) => (
+              {repos.map((repo) => (
                 <option key={repo.id} value={repo.full_name}>{repo.full_name}</option>
               ))}
             </select>
@@ -200,6 +214,7 @@ const DiffViewer = () => {
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               value={base}
               onChange={(e) => setBase(e.target.value)}
+              disabled={branchesLoading || !branches || branches.length === 0}
             >
               <option value="">Select base...</option>
               {branches?.map((branch) => (
@@ -216,6 +231,7 @@ const DiffViewer = () => {
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               value={head}
               onChange={(e) => setHead(e.target.value)}
+              disabled={branchesLoading || !branches || branches.length === 0}
             >
               <option value="">Select head...</option>
               {branches?.map((branch) => (
@@ -247,6 +263,14 @@ const DiffViewer = () => {
             </div>
           </div>
         </div>
+
+        {branchesLoading && (
+          <p className="mt-2 text-sm text-gray-500">Loading branches...</p>
+        )}
+
+        {branchesError && (
+          <p className="mt-2 text-sm text-red-600">Failed to load branches for the selected repository.</p>
+        )}
       </div>
 
       {/* Comparison Summary */}
@@ -283,17 +307,17 @@ const DiffViewer = () => {
           <div className="divide-y divide-gray-100 max-h-64 overflow-y-auto">
             {comparison.commits.map((commit) => (
               <div key={commit.sha} className="px-4 py-3 flex items-center gap-3 hover:bg-gray-50">
-                {commit.author.avatar ? (
-                  <img src={commit.author.avatar} alt={commit.author.name} className="w-8 h-8 rounded-full" />
+                {commit.author?.avatar ? (
+                  <img src={commit.author.avatar} alt={commit.author.name || commit.author.login} className="w-8 h-8 rounded-full" />
                 ) : (
                   <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-xs">
-                    {commit.author.name.charAt(0)}
+                    {(commit.author?.name || commit.author?.login || '?').charAt(0)}
                   </div>
                 )}
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-gray-900 truncate">{commit.message}</p>
                   <p className="text-xs text-gray-500">
-                    {commit.author.login || commit.author.name} · {new Date(commit.author.date).toLocaleDateString()}
+                    {(commit.author?.login || commit.author?.name || 'Unknown')} · {commit.author?.date ? new Date(commit.author.date).toLocaleDateString() : ''}
                   </p>
                 </div>
                 <a
@@ -367,15 +391,27 @@ const DiffViewer = () => {
         </div>
       )}
 
-      {error && (
+      {compareError && (
         <div className="bg-red-50 rounded-lg p-4 text-red-700">
-          Failed to compare branches. Make sure both branches exist.
+          Failed to compare branches. Make sure both branches exist and you have selected different branches.
+        </div>
+      )}
+
+      {!comparing && !comparison && base && head && base !== head && !compareError && (
+        <div className="bg-gray-50 rounded-lg p-4 text-gray-600">
+          No differences found between the selected branches.
         </div>
       )}
 
       {base === head && base && (
         <div className="bg-amber-50 rounded-lg p-4 text-amber-700">
           Please select different branches to compare.
+        </div>
+      )}
+
+      {!base && !head && branches && branches.length > 0 && (
+        <div className="bg-blue-50 rounded-lg p-4 text-blue-700">
+          Select a base and compare branch to see the diff between them.
         </div>
       )}
     </div>
