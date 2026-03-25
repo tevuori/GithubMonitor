@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { 
+import {
   getNotifications,
   markNotificationAsRead,
   markAllNotificationsAsRead,
@@ -14,13 +14,25 @@ const requireAuth = (req: Request, res: Response, next: any) => {
 };
 
 // Get all notifications
+// Query params:
+//   all=true      – include already-read notifications (default: false → only unread)
+//   participating=true – only notifications where the user is participating
+//   reason        – comma-separated list of reasons to filter by (e.g. "mention,review_requested")
+//   page          – pagination page number
 router.get('/', requireAuth, async (req: Request, res: Response) => {
   try {
     const user = req.user as any;
     const all = req.query.all === 'true';
     const participating = req.query.participating === 'true';
     const page = parseInt(String(req.query.page)) || 1;
-    const data = await getNotifications(user.accessToken, all, participating, page);
+    let data = await getNotifications(user.accessToken, all, participating, page);
+
+    // Optional client-side reason filter (comma-separated)
+    const reasonFilter = req.query.reason ? String(req.query.reason).split(',') : null;
+    if (reasonFilter && reasonFilter.length > 0) {
+      data = data.filter((n: any) => reasonFilter.includes(n.reason));
+    }
+
     res.json(data);
   } catch (err: any) {
     console.error('Notifications error:', err);
@@ -41,7 +53,7 @@ router.get('/thread/:threadId', requireAuth, async (req: Request, res: Response)
   }
 });
 
-// Mark a notification as read
+// Mark a single notification thread as read
 router.patch('/thread/:threadId/read', requireAuth, async (req: Request, res: Response) => {
   try {
     const user = req.user as any;
@@ -54,7 +66,7 @@ router.patch('/thread/:threadId/read', requireAuth, async (req: Request, res: Re
   }
 });
 
-// Mark all notifications as read
+// Mark ALL notifications as read
 router.put('/read', requireAuth, async (req: Request, res: Response) => {
   try {
     const user = req.user as any;
