@@ -58,6 +58,16 @@ interface Webhook {
   created_at: string;
 }
 
+interface BranchListItem {
+  name: string;
+  protected: boolean;
+}
+
+interface BranchResponse {
+  branches: BranchListItem[];
+  defaultBranch: string;
+}
+
 interface BranchProtection {
   protected: boolean;
   required_status_checks?: any;
@@ -107,15 +117,17 @@ const Settings = () => {
   }, [settings, selectedBranch]);
 
   // Fetch branches
-  const { data: branches } = useQuery<Array<{ name: string; protected: boolean }>>({
+  const { data: branchesData } = useQuery<BranchResponse>({
     queryKey: ['branches', selectedRepo?.owner.login, selectedRepo?.name],
     queryFn: async () => {
-      if (!selectedRepo) return [];
+      if (!selectedRepo) return { branches: [], defaultBranch: '' };
       const res = await api.get(`/api/branches/${selectedRepo.owner.login}/${selectedRepo.name}`);
       return res.data;
     },
     enabled: !!selectedRepo,
   });
+
+  const branchList = branchesData?.branches ?? [];
 
   // Fetch branch protection
   const { data: protection, isLoading: protectionLoading } = useQuery<BranchProtection>({
@@ -345,7 +357,7 @@ const Settings = () => {
                   value={selectedBranch}
                   onChange={(e) => setSelectedBranch(e.target.value)}
                 >
-                  {branches?.map((branch) => (
+                  {branchList.map((branch) => (
                     <option key={branch.name} value={branch.name}>
                       {branch.name} {branch.protected ? '(protected)' : ''}
                     </option>
