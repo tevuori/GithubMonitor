@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Outlet, NavLink } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../contexts/ThemeContext';
 import api from '../services/api';
 
 // ── Icons ────────────────────────────────────────────────────────────────────
@@ -30,6 +31,18 @@ const GearIcon = () => (
   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+  </svg>
+);
+
+const SunIcon = () => (
+  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707M17.657 17.657l-.707-.707M6.343 6.343l-.707-.707M12 8a4 4 0 100 8 4 4 0 000-8z" />
+  </svg>
+);
+
+const MoonIcon = () => (
+  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" />
   </svg>
 );
 
@@ -86,10 +99,10 @@ const EnvSettingsModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
       {/* Panel */}
-      <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-lg mx-4 max-h-[90vh] flex flex-col">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">Environment Settings</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
+      <div className="relative bg-card text-card-foreground rounded-xl shadow-2xl w-full max-w-lg mx-4 max-h-[90vh] flex flex-col">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border">
+          <h2 className="text-lg font-semibold text-foreground">Environment Settings</h2>
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground transition-colors">
             <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -99,34 +112,34 @@ const EnvSettingsModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
         <div className="overflow-y-auto flex-1 px-6 py-4 space-y-4">
           {loading ? (
             <div className="flex justify-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900" />
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
             </div>
           ) : (
             ENV_FIELDS.map(field => (
               <div key={field.key}>
-                <label className="block text-sm font-medium text-gray-700">{field.label}</label>
+                <label className="block text-sm font-medium text-foreground">{field.label}</label>
                 <input
                   type={field.type || 'text'}
                   value={values[field.key] || ''}
                   onChange={e => handleChange(field.key, e.target.value)}
                   placeholder={field.hint || ''}
-                  className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+                  className="mt-1 block w-full border border-input rounded-md px-3 py-2 text-sm bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                 />
-                {field.hint && <p className="mt-1 text-xs text-gray-400">{field.hint}</p>}
+                {field.hint && <p className="mt-1 text-xs text-muted-foreground">{field.hint}</p>}
               </div>
             ))
           )}
         </div>
 
-        <div className="px-6 py-4 border-t border-gray-200 flex items-center gap-3">
-          {error && <p className="text-sm text-red-600 flex-1">{error}</p>}
-          {success && <p className="text-sm text-green-600 flex-1">Saved successfully!</p>}
-          {!error && !success && <p className="text-xs text-gray-400 flex-1">Changes are written to the root <code>.env</code> file.</p>}
-          <button onClick={onClose} className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900">Cancel</button>
+        <div className="px-6 py-4 border-t border-border flex items-center gap-3">
+          {error && <p className="text-sm text-destructive flex-1">{error}</p>}
+          {success && <p className="text-sm text-green-600 dark:text-green-400 flex-1">Saved successfully!</p>}
+          {!error && !success && <p className="text-xs text-muted-foreground flex-1">Changes are written to the root <code>.env</code> file.</p>}
+          <button onClick={onClose} className="px-4 py-2 text-sm text-muted-foreground hover:text-foreground">Cancel</button>
           <button
             onClick={handleSave}
             disabled={saving}
-            className="px-4 py-2 text-sm font-medium text-white bg-gray-900 rounded-md hover:bg-gray-700 disabled:opacity-50"
+            className="px-4 py-2 text-sm font-medium text-primary-foreground bg-primary rounded-md hover:opacity-90 disabled:opacity-50"
           >
             {saving ? 'Saving...' : 'Save'}
           </button>
@@ -139,6 +152,7 @@ const EnvSettingsModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
 // ── Layout ────────────────────────────────────────────────────────────────────
 const Layout: React.FC = () => {
   const { user, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const [envModalOpen, setEnvModalOpen] = useState(false);
 
   const navigation = [
@@ -168,26 +182,33 @@ const Layout: React.FC = () => {
   ];
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-background text-foreground">
       {envModalOpen && <EnvSettingsModal onClose={() => setEnvModalOpen(false)} />}
 
       {/* Sidebar */}
       <div className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0">
-        <div className="flex flex-col flex-grow pt-5 bg-white border-r border-gray-200 overflow-y-auto">
-          {/* Logo + title + gear */}
+        <div className="flex flex-col flex-grow pt-5 bg-card border-r border-border overflow-y-auto">
+          {/* Logo + title + gear + theme toggle */}
           <div className="flex items-center flex-shrink-0 px-4">
             <div className="flex items-center flex-1 min-w-0">
-              <div className="h-8 w-8 flex-shrink-0 bg-gray-900 rounded-md flex items-center justify-center">
-                <svg className="h-5 w-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+              <div className="h-8 w-8 flex-shrink-0 bg-foreground rounded-md flex items-center justify-center">
+                <svg className="h-5 w-5 text-background" fill="currentColor" viewBox="0 0 24 24">
                   <path fillRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clipRule="evenodd" />
                 </svg>
               </div>
-              <span className="ml-3 text-xl font-bold text-gray-900 truncate">GitHub Monitor</span>
+              <span className="ml-3 text-xl font-bold text-foreground truncate">GitHub Monitor</span>
             </div>
+            <button
+              onClick={toggleTheme}
+              title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+              className="ml-1 flex-shrink-0 p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+            >
+              {theme === 'dark' ? <SunIcon /> : <MoonIcon />}
+            </button>
             <button
               onClick={() => setEnvModalOpen(true)}
               title="Environment Settings"
-              className="ml-2 flex-shrink-0 p-1 rounded-md text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
+              className="ml-1 flex-shrink-0 p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
             >
               <GearIcon />
             </button>
@@ -203,7 +224,9 @@ const Layout: React.FC = () => {
                     to={item.href}
                     className={({ isActive }) =>
                       `group flex items-center px-2 py-2 text-sm font-medium rounded-md ${
-                        isActive ? 'bg-gray-100 text-gray-900' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                        isActive
+                          ? 'bg-muted text-foreground'
+                          : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                       }`
                     }
                   >
@@ -216,13 +239,13 @@ const Layout: React.FC = () => {
           </div>
 
           {user && (
-            <div className="flex-shrink-0 flex border-t border-gray-200 p-4">
+            <div className="flex-shrink-0 flex border-t border-border p-4">
               <div className="flex items-center w-full">
                 <div className="ml-3 flex-1 min-w-0">
-                  <div className="text-sm font-medium text-gray-700 truncate">{user.displayName}</div>
-                  <div className="text-xs text-gray-500 truncate">{user.username}</div>
+                  <div className="text-sm font-medium text-foreground truncate">{user.displayName}</div>
+                  <div className="text-xs text-muted-foreground truncate">{user.username}</div>
                 </div>
-                <button onClick={logout} className="ml-auto text-sm text-gray-500 hover:text-gray-700">Logout</button>
+                <button onClick={logout} className="ml-auto text-sm text-muted-foreground hover:text-foreground">Logout</button>
               </div>
             </div>
           )}
