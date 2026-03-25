@@ -107,17 +107,6 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
-// Passport GitHub OAuth configuration
-passport.use(new GitHubStrategy({
-  clientID: process.env.GITHUB_CLIENT_ID || '',
-  clientSecret: process.env.GITHUB_CLIENT_SECRET || '',
-  callbackURL: process.env.GITHUB_CALLBACK_URL || 'http://localhost:3000/auth/github/callback',
-  scope: ['user:email', 'read:org', 'repo']
-}, (accessToken: string, _refreshToken: string, profile: any, done: any) => {
-  profile.accessToken = accessToken;
-  return done(null, profile);
-}));
-
 passport.serializeUser((user: any, done) => {
   done(null, user);
 });
@@ -125,6 +114,40 @@ passport.serializeUser((user: any, done) => {
 passport.deserializeUser((user: any, done) => {
   done(null, user);
 });
+
+/**
+ * Registers (or re-registers) the GitHub OAuth strategy with the current
+ * environment variables. Safe to call at startup (no-op if credentials are
+ * missing) and again after credentials are saved via /api/env/setup.
+ */
+export function configurePassport(): boolean {
+  const clientID = process.env.GITHUB_CLIENT_ID;
+  const clientSecret = process.env.GITHUB_CLIENT_SECRET;
+
+  if (!clientID || !clientSecret) {
+    console.log('GitHub OAuth credentials not set — skipping passport strategy registration.');
+    return false;
+  }
+
+  // Unregister existing strategy if already registered to avoid duplicate errors
+  try { (passport as any)._strategies && delete (passport as any)._strategies['github']; } catch (_) {}
+
+  passport.use(new GitHubStrategy({
+    clientID,
+    clientSecret,
+    callbackURL: process.env.GITHUB_CALLBACK_URL || 'http://localhost:3000/auth/github/callback',
+    scope: ['user:email', 'read:org', 'repo']
+  }, (accessToken: string, _refreshToken: string, profile: any, done: any) => {
+    profile.accessToken = accessToken;
+    return done(null, profile);
+  }));
+
+  console.log('GitHub OAuth strategy registered successfully.');
+  return true;
+}
+
+// Attempt to register at startup — no-op if credentials are absent
+configurePassport();
 
 // Socket.io connection handling
 io.on('connection', (socket) => {
@@ -155,7 +178,14 @@ app.get('/', (_req, res) => {
 app.use('/api/env', envRoutes);
 
 // Auth routes
-app.get('/auth/github', passport.authenticate('github'));
+app.get('/auth/github', (req, res, next) => {
+  if (!process.env.GITHUB_CLIENT_ID || !process.env.GITHUB_CLIENT_SECRET) {
+    return res.status(503).json({
+      error: 'GitHub OAuth is not configured yet. Please provide your credentials via the setup page.'
+    });
+  }
+  passport.authenticate('github')(req, res, next);
+});
 
 app.get('/auth/github/callback',
   passport.authenticate('github', { failureRedirect: '/login' }),

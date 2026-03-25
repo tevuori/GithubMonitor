@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
+import { configurePassport } from '../index';
 
 const router = Router();
 const __filename = fileURLToPath(import.meta.url);
@@ -98,7 +99,10 @@ router.post('/setup', (req: Request, res: Response) => {
     process.env[k] = v;
   }
 
-  return res.json({ success: true, written: Object.keys(clean) });
+  // Re-register passport strategy now that credentials may be available
+  const passportReady = configurePassport();
+
+  return res.json({ success: true, written: Object.keys(clean), passportReady });
 });
 
 export default router;
