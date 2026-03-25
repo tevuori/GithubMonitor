@@ -29,7 +29,6 @@ const Dashboard: React.FC = () => {
   const publicRepos = repos?.filter((r: any) => !r.private).length ?? 0;
   const privateRepos = repos?.filter((r: any) => r.private).length ?? 0;
 
-  // Get language breakdown
   const languages = repos?.reduce((acc: Record<string, number>, r: any) => {
     if (r.language) {
       acc[r.language] = (acc[r.language] || 0) + 1;
@@ -41,10 +40,8 @@ const Dashboard: React.FC = () => {
     .sort((a, b) => b[1] - a[1])
     .slice(0, 5);
 
-  // Recent repos
   const recentRepos = repos?.slice(0, 5) ?? [];
 
-  // Activity data
   const recentActivity = [
     ...(pulls?.slice(0, 3).map((pr: any) => ({
       type: 'pr',
@@ -98,11 +95,11 @@ const Dashboard: React.FC = () => {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-        <div className="bg-white rounded-xl shadow-sm p-5 border border-gray-100">
+        <div className="bg-card rounded-xl shadow-sm p-5 border border-border">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-500">Repositories</p>
-              <p className="text-2xl font-bold text-gray-900 mt-1">
+              <p className="text-sm font-medium text-muted-foreground">Repositories</p>
+              <p className="text-2xl font-bold text-foreground mt-1">
                 {reposLoading ? '...' : totalRepos}
               </p>
             </div>
@@ -114,11 +111,11 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm p-5 border border-gray-100">
+        <div className="bg-card rounded-xl shadow-sm p-5 border border-border">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-500">Total Stars</p>
-              <p className="text-2xl font-bold text-gray-900 mt-1">
+              <p className="text-sm font-medium text-muted-foreground">Total Stars</p>
+              <p className="text-2xl font-bold text-foreground mt-1">
                 {reposLoading ? '...' : totalStars.toLocaleString()}
               </p>
             </div>
@@ -130,11 +127,11 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm p-5 border border-gray-100">
+        <div className="bg-card rounded-xl shadow-sm p-5 border border-border">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-500">Total Forks</p>
-              <p className="text-2xl font-bold text-gray-900 mt-1">
+              <p className="text-sm font-medium text-muted-foreground">Total Forks</p>
+              <p className="text-2xl font-bold text-foreground mt-1">
                 {reposLoading ? '...' : totalForks.toLocaleString()}
               </p>
             </div>
@@ -146,11 +143,11 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm p-5 border border-gray-100">
+        <div className="bg-card rounded-xl shadow-sm p-5 border border-border">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-500">Open Issues</p>
-              <p className="text-2xl font-bold text-gray-900 mt-1">
+              <p className="text-sm font-medium text-muted-foreground">Open Issues</p>
+              <p className="text-2xl font-bold text-foreground mt-1">
                 {reposLoading ? '...' : openIssues}
               </p>
             </div>
@@ -162,11 +159,11 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm p-5 border border-gray-100">
+        <div className="bg-card rounded-xl shadow-sm p-5 border border-border">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-500">Open PRs</p>
-              <p className="text-2xl font-bold text-gray-900 mt-1">
+              <p className="text-sm font-medium text-muted-foreground">Open PRs</p>
+              <p className="text-2xl font-bold text-foreground mt-1">
                 {pulls?.length ?? 0}
               </p>
             </div>
@@ -178,16 +175,16 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm p-5 border border-gray-100">
+        <div className="bg-card rounded-xl shadow-sm p-5 border border-border">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-500">Private</p>
-              <p className="text-2xl font-bold text-gray-900 mt-1">
+              <p className="text-sm font-medium text-muted-foreground">Private</p>
+              <p className="text-2xl font-bold text-foreground mt-1">
                 {reposLoading ? '...' : privateRepos}
               </p>
             </div>
-            <div className="p-3 bg-gray-100 rounded-lg">
-              <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="p-3 bg-muted rounded-lg">
+              <svg className="w-6 h-6 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
               </svg>
             </div>
@@ -197,14 +194,14 @@ const Dashboard: React.FC = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Recent Activity */}
-        <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-900">Recent Activity</h2>
+        <div className="lg:col-span-2 bg-card rounded-xl shadow-sm border border-border overflow-hidden">
+          <div className="px-6 py-4 border-b border-border flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-foreground">Recent Activity</h2>
             <Link to="/pull-requests" className="text-sm text-blue-600 hover:underline">View all</Link>
           </div>
-          <div className="divide-y divide-gray-100">
+          <div className="divide-y divide-border">
             {recentActivity.length === 0 ? (
-              <div className="p-6 text-center text-gray-500">No recent activity</div>
+              <div className="p-6 text-center text-muted-foreground">No recent activity</div>
             ) : (
               recentActivity.map((activity, i) => (
                 <a 
@@ -212,7 +209,7 @@ const Dashboard: React.FC = () => {
                   href={activity.url} 
                   target="_blank" 
                   rel="noreferrer"
-                  className="flex items-center gap-4 px-6 py-4 hover:bg-gray-50 transition-colors"
+                  className="flex items-center gap-4 px-6 py-4 hover:bg-muted/50 transition-colors"
                 >
                   <div className={`p-2 rounded-lg ${activity.type === 'pr' ? 'bg-purple-100' : 'bg-green-100'}`}>
                     {activity.type === 'pr' ? (
@@ -226,10 +223,10 @@ const Dashboard: React.FC = () => {
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 truncate">{activity.title}</p>
-                    <p className="text-xs text-gray-500">{activity.repo}</p>
+                    <p className="text-sm font-medium text-foreground truncate">{activity.title}</p>
+                    <p className="text-xs text-muted-foreground">{activity.repo}</p>
                   </div>
-                  <span className="text-xs text-gray-400">
+                  <span className="text-xs text-muted-foreground">
                     {new Date(activity.time).toLocaleDateString()}
                   </span>
                 </a>
@@ -239,22 +236,22 @@ const Dashboard: React.FC = () => {
         </div>
 
         {/* Language Breakdown */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-100">
-            <h2 className="text-lg font-semibold text-gray-900">Languages</h2>
+        <div className="bg-card rounded-xl shadow-sm border border-border overflow-hidden">
+          <div className="px-6 py-4 border-b border-border">
+            <h2 className="text-lg font-semibold text-foreground">Languages</h2>
           </div>
           <div className="p-6">
             {topLanguages.length === 0 ? (
-              <div className="text-center text-gray-500">No language data</div>
+              <div className="text-center text-muted-foreground">No language data</div>
             ) : (
               <div className="space-y-4">
                 {topLanguages.map(([lang, count]) => (
                   <div key={lang}>
                     <div className="flex items-center justify-between text-sm mb-1">
-                      <span className="font-medium text-gray-700">{lang}</span>
-                      <span className="text-gray-500">{count} repos</span>
+                      <span className="font-medium text-foreground">{lang}</span>
+                      <span className="text-muted-foreground">{count} repos</span>
                     </div>
-                    <div className="w-full bg-gray-100 rounded-full h-2">
+                    <div className="w-full bg-muted rounded-full h-2">
                       <div 
                         className="h-2 rounded-full transition-all"
                         style={{ 
@@ -272,14 +269,14 @@ const Dashboard: React.FC = () => {
       </div>
 
       {/* Recent Repositories */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-gray-900">Recent Repositories</h2>
+      <div className="bg-card rounded-xl shadow-sm border border-border overflow-hidden">
+        <div className="px-6 py-4 border-b border-border flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-foreground">Recent Repositories</h2>
           <Link to="/repositories" className="text-sm text-blue-600 hover:underline">View all</Link>
         </div>
-        <div className="divide-y divide-gray-100">
+        <div className="divide-y divide-border">
           {recentRepos.map((repo: any) => (
-            <div key={repo.id} className="px-6 py-4 flex items-center justify-between hover:bg-gray-50">
+            <div key={repo.id} className="px-6 py-4 flex items-center justify-between hover:bg-muted/50">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <a 
@@ -291,16 +288,16 @@ const Dashboard: React.FC = () => {
                     {repo.name}
                   </a>
                   {repo.private && (
-                    <span className="px-2 py-0.5 text-xs bg-gray-100 text-gray-600 rounded">Private</span>
+                    <span className="px-2 py-0.5 text-xs bg-muted text-muted-foreground rounded">Private</span>
                   )}
                 </div>
-                <p className="text-sm text-gray-500 truncate mt-0.5">
+                <p className="text-sm text-muted-foreground truncate mt-0.5">
                   {repo.description || 'No description'}
                 </p>
               </div>
               <div className="flex items-center gap-4 ml-4">
                 {repo.language && (
-                  <span className="flex items-center gap-1 text-sm text-gray-600">
+                  <span className="flex items-center gap-1 text-sm text-muted-foreground">
                     <span 
                       className="w-3 h-3 rounded-full" 
                       style={{ backgroundColor: languageColors[repo.language] || '#6b7280' }}
@@ -308,8 +305,8 @@ const Dashboard: React.FC = () => {
                     {repo.language}
                   </span>
                 )}
-                <span className="text-sm text-gray-500">⭐ {repo.stargazers_count}</span>
-                <span className="text-sm text-gray-500">🍴 {repo.forks_count}</span>
+                <span className="text-sm text-muted-foreground">⭐ {repo.stargazers_count}</span>
+                <span className="text-sm text-muted-foreground">🍴 {repo.forks_count}</span>
               </div>
             </div>
           ))}
@@ -318,44 +315,44 @@ const Dashboard: React.FC = () => {
 
       {/* Quick Links */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Link to="/search" className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition-shadow">
+        <Link to="/search" className="bg-card rounded-xl shadow-sm border border-border p-5 hover:shadow-md transition-shadow">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-blue-100 rounded-lg">
               <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
             </div>
-            <span className="font-medium text-gray-900">Code Search</span>
+            <span className="font-medium text-foreground">Code Search</span>
           </div>
         </Link>
-        <Link to="/files" className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition-shadow">
+        <Link to="/files" className="bg-card rounded-xl shadow-sm border border-border p-5 hover:shadow-md transition-shadow">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-green-100 rounded-lg">
               <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
               </svg>
             </div>
-            <span className="font-medium text-gray-900">File Browser</span>
+            <span className="font-medium text-foreground">File Browser</span>
           </div>
         </Link>
-        <Link to="/traffic" className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition-shadow">
+        <Link to="/traffic" className="bg-card rounded-xl shadow-sm border border-border p-5 hover:shadow-md transition-shadow">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-purple-100 rounded-lg">
               <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
               </svg>
             </div>
-            <span className="font-medium text-gray-900">Traffic</span>
+            <span className="font-medium text-foreground">Traffic</span>
           </div>
         </Link>
-        <Link to="/organization" className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition-shadow">
+        <Link to="/organization" className="bg-card rounded-xl shadow-sm border border-border p-5 hover:shadow-md transition-shadow">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-orange-100 rounded-lg">
               <svg className="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
               </svg>
             </div>
-            <span className="font-medium text-gray-900">Organization</span>
+            <span className="font-medium text-foreground">Organization</span>
           </div>
         </Link>
       </div>

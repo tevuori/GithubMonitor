@@ -64,26 +64,22 @@ const Repositories: React.FC = () => {
     queryFn: () => api.get('/api/repos').then(r => r.data),
   });
 
-  // Get unique languages
   const languages = useMemo(() => {
     if (!repos) return [];
     const langs = [...new Set(repos.map(r => r.language).filter(Boolean) as string[])];
     return langs.sort();
   }, [repos]);
 
-  // Filter and sort repos
   const filteredRepos = useMemo(() => {
     if (!repos) return [];
 
     let result = repos.filter(repo => {
-      // Search filter
       const matchesSearch = searchTerm === '' ||
         repo.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         repo.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         repo.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         repo.topics?.some(t => t.toLowerCase().includes(searchTerm.toLowerCase()));
 
-      // Type filter
       const matchesFilter = 
         filterBy === 'all' ||
         (filterBy === 'public' && !repo.private) ||
@@ -91,13 +87,11 @@ const Repositories: React.FC = () => {
         (filterBy === 'fork' && repo.fork) ||
         (filterBy === 'source' && !repo.fork);
 
-      // Language filter
       const matchesLanguage = filterLanguage === '' || repo.language === filterLanguage;
 
       return matchesSearch && matchesFilter && matchesLanguage;
     });
 
-    // Sort
     result.sort((a, b) => {
       switch (sortBy) {
         case 'stars':
@@ -117,7 +111,6 @@ const Repositories: React.FC = () => {
     return result;
   }, [repos, searchTerm, sortBy, filterBy, filterLanguage]);
 
-  // Stats
   const stats = useMemo(() => {
     if (!repos) return { total: 0, public: 0, private: 0, forks: 0, stars: 0 };
     return {
@@ -148,15 +141,15 @@ const Repositories: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Repositories</h1>
-          <p className="mt-1 text-sm text-gray-500">
+          <h1 className="text-2xl font-bold text-foreground">Repositories</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
             {stats.total} repositories · {stats.stars.toLocaleString()} total stars
           </p>
         </div>
         <div className="flex items-center gap-2">
           <button
             onClick={() => setViewMode('list')}
-            className={`p-2 rounded-lg ${viewMode === 'list' ? 'bg-gray-200' : 'hover:bg-gray-100'}`}
+            className={`p-2 rounded-lg ${viewMode === 'list' ? 'bg-muted' : 'hover:bg-muted'}`}
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
@@ -164,7 +157,7 @@ const Repositories: React.FC = () => {
           </button>
           <button
             onClick={() => setViewMode('grid')}
-            className={`p-2 rounded-lg ${viewMode === 'grid' ? 'bg-gray-200' : 'hover:bg-gray-100'}`}
+            className={`p-2 rounded-lg ${viewMode === 'grid' ? 'bg-muted' : 'hover:bg-muted'}`}
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
@@ -177,38 +170,38 @@ const Repositories: React.FC = () => {
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         <button
           onClick={() => setFilterBy('all')}
-          className={`p-4 rounded-xl border transition-all ${filterBy === 'all' ? 'border-blue-500 bg-blue-50' : 'border-gray-200 bg-white hover:border-gray-300'}`}
+          className={`p-4 rounded-xl border transition-all ${filterBy === 'all' ? 'border-blue-500 bg-blue-50' : 'border-border bg-card hover:border-input'}`}
         >
-          <div className="text-2xl font-bold text-gray-900">{stats.total}</div>
-          <div className="text-sm text-gray-500">All Repos</div>
+          <div className="text-2xl font-bold text-foreground">{stats.total}</div>
+          <div className="text-sm text-muted-foreground">All Repos</div>
         </button>
         <button
           onClick={() => setFilterBy('public')}
-          className={`p-4 rounded-xl border transition-all ${filterBy === 'public' ? 'border-blue-500 bg-blue-50' : 'border-gray-200 bg-white hover:border-gray-300'}`}
+          className={`p-4 rounded-xl border transition-all ${filterBy === 'public' ? 'border-blue-500 bg-blue-50' : 'border-border bg-card hover:border-input'}`}
         >
           <div className="text-2xl font-bold text-green-600">{stats.public}</div>
-          <div className="text-sm text-gray-500">Public</div>
+          <div className="text-sm text-muted-foreground">Public</div>
         </button>
         <button
           onClick={() => setFilterBy('private')}
-          className={`p-4 rounded-xl border transition-all ${filterBy === 'private' ? 'border-blue-500 bg-blue-50' : 'border-gray-200 bg-white hover:border-gray-300'}`}
+          className={`p-4 rounded-xl border transition-all ${filterBy === 'private' ? 'border-blue-500 bg-blue-50' : 'border-border bg-card hover:border-input'}`}
         >
           <div className="text-2xl font-bold text-orange-600">{stats.private}</div>
-          <div className="text-sm text-gray-500">Private</div>
+          <div className="text-sm text-muted-foreground">Private</div>
         </button>
         <button
           onClick={() => setFilterBy('fork')}
-          className={`p-4 rounded-xl border transition-all ${filterBy === 'fork' ? 'border-blue-500 bg-blue-50' : 'border-gray-200 bg-white hover:border-gray-300'}`}
+          className={`p-4 rounded-xl border transition-all ${filterBy === 'fork' ? 'border-blue-500 bg-blue-50' : 'border-border bg-card hover:border-input'}`}
         >
           <div className="text-2xl font-bold text-purple-600">{stats.forks}</div>
-          <div className="text-sm text-gray-500">Forks</div>
+          <div className="text-sm text-muted-foreground">Forks</div>
         </button>
         <button
           onClick={() => setFilterBy('source')}
-          className={`p-4 rounded-xl border transition-all ${filterBy === 'source' ? 'border-blue-500 bg-blue-50' : 'border-gray-200 bg-white hover:border-gray-300'}`}
+          className={`p-4 rounded-xl border transition-all ${filterBy === 'source' ? 'border-blue-500 bg-blue-50' : 'border-border bg-card hover:border-input'}`}
         >
           <div className="text-2xl font-bold text-blue-600">{stats.total - stats.forks}</div>
-          <div className="text-sm text-gray-500">Sources</div>
+          <div className="text-sm text-muted-foreground">Sources</div>
         </button>
       </div>
 
@@ -220,17 +213,17 @@ const Repositories: React.FC = () => {
             placeholder="Search repositories..."
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full pl-10 pr-4 py-2 border border-input rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
             data-testid="search-input"
           />
-          <svg className="absolute left-3 top-2.5 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="absolute left-3 top-2.5 w-5 h-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
         </div>
         <select
           value={filterLanguage}
           onChange={e => setFilterLanguage(e.target.value)}
-          className="px-4 py-2 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="px-4 py-2 border border-input rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
           data-testid="language-filter"
         >
           <option value="">All languages</option>
@@ -241,7 +234,7 @@ const Repositories: React.FC = () => {
         <select
           value={sortBy}
           onChange={e => setSortBy(e.target.value as SortOption)}
-          className="px-4 py-2 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="px-4 py-2 border border-input rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
           data-testid="sort-select"
         >
           <option value="updated">Recently updated</option>
@@ -252,24 +245,22 @@ const Repositories: React.FC = () => {
         </select>
       </div>
 
-      {/* Results count */}
       {searchTerm || filterLanguage || filterBy !== 'all' ? (
-        <div className="text-sm text-gray-500">
+        <div className="text-sm text-muted-foreground">
           Showing {filteredRepos.length} of {repos?.length} repositories
           {searchTerm && <span> matching "{searchTerm}"</span>}
         </div>
       ) : null}
 
-      {/* Content */}
       {isLoading && (
-        <div className="bg-white rounded-xl shadow-sm p-8 text-center">
-          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500 mx-auto"></div>
-          <p className="mt-4 text-gray-500">Loading repositories...</p>
+        <div className="bg-card rounded-xl shadow-sm p-8 text-center">
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Loading repositories...</p>
         </div>
       )}
 
       {isError && (
-        <div className="bg-white rounded-xl shadow-sm p-8 text-center">
+        <div className="bg-card rounded-xl shadow-sm p-8 text-center">
           <svg className="w-12 h-12 text-red-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
@@ -277,12 +268,11 @@ const Repositories: React.FC = () => {
         </div>
       )}
 
-      {/* List View */}
       {viewMode === 'list' && !isLoading && (
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-          <div className="divide-y divide-gray-100">
+        <div className="bg-card rounded-xl shadow-sm overflow-hidden">
+          <div className="divide-y divide-border">
             {filteredRepos.map(repo => (
-              <div key={repo.id} className="p-6 hover:bg-gray-50 transition-colors">
+              <div key={repo.id} className="p-6 hover:bg-muted/50 transition-colors">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
@@ -302,7 +292,7 @@ const Repositories: React.FC = () => {
                       )}
                     </div>
                     {repo.description && (
-                      <p className="mt-1 text-gray-600 line-clamp-2">{repo.description}</p>
+                      <p className="mt-1 text-muted-foreground line-clamp-2">{repo.description}</p>
                     )}
                     {repo.topics && repo.topics.length > 0 && (
                       <div className="mt-2 flex flex-wrap gap-1">
@@ -312,11 +302,11 @@ const Repositories: React.FC = () => {
                           </span>
                         ))}
                         {repo.topics.length > 5 && (
-                          <span className="text-xs text-gray-400">+{repo.topics.length - 5} more</span>
+                          <span className="text-xs text-muted-foreground">+{repo.topics.length - 5} more</span>
                         )}
                       </div>
                     )}
-                    <div className="mt-3 flex items-center gap-4 text-sm text-gray-500">
+                    <div className="mt-3 flex items-center gap-4 text-sm text-muted-foreground">
                       {repo.language && (
                         <span className="flex items-center gap-1">
                           <span
@@ -344,13 +334,13 @@ const Repositories: React.FC = () => {
                   <div className="flex flex-col gap-2">
                     <Link
                       to={`/files?repo=${repo.full_name}`}
-                      className="px-3 py-1.5 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors text-center"
+                      className="px-3 py-1.5 text-sm bg-muted hover:bg-muted/80 text-foreground rounded-lg transition-colors text-center"
                     >
                       Browse Files
                     </Link>
                     <Link
                       to={`/branches?repo=${repo.full_name}`}
-                      className="px-3 py-1.5 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors text-center"
+                      className="px-3 py-1.5 text-sm bg-muted hover:bg-muted/80 text-foreground rounded-lg transition-colors text-center"
                     >
                       Git Graph
                     </Link>
@@ -362,20 +352,19 @@ const Repositories: React.FC = () => {
 
           {filteredRepos.length === 0 && (
             <div className="p-8 text-center">
-              <svg className="w-12 h-12 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-12 h-12 text-muted mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
-              <p className="text-gray-400">No repositories match your filters</p>
+              <p className="text-muted-foreground">No repositories match your filters</p>
             </div>
           )}
         </div>
       )}
 
-      {/* Grid View */}
       {viewMode === 'grid' && !isLoading && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredRepos.map(repo => (
-            <div key={repo.id} className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition-shadow">
+            <div key={repo.id} className="bg-card rounded-xl shadow-sm p-6 border border-border hover:shadow-md transition-shadow">
               <div className="flex items-start justify-between">
                 <a
                   href={repo.html_url}
@@ -395,9 +384,9 @@ const Repositories: React.FC = () => {
                 </div>
               </div>
               {repo.description && (
-                <p className="mt-2 text-sm text-gray-600 line-clamp-2">{repo.description}</p>
+                <p className="mt-2 text-sm text-muted-foreground line-clamp-2">{repo.description}</p>
               )}
-              <div className="mt-4 flex items-center justify-between text-sm text-gray-500">
+              <div className="mt-4 flex items-center justify-between text-sm text-muted-foreground">
                 <div className="flex items-center gap-3">
                   {repo.language && (
                     <span className="flex items-center gap-1">
@@ -418,11 +407,11 @@ const Repositories: React.FC = () => {
           ))}
 
           {filteredRepos.length === 0 && (
-            <div className="col-span-full p-8 text-center bg-white rounded-xl">
-              <svg className="w-12 h-12 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="col-span-full p-8 text-center bg-card rounded-xl">
+              <svg className="w-12 h-12 text-muted mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
-              <p className="text-gray-400">No repositories match your filters</p>
+              <p className="text-muted-foreground">No repositories match your filters</p>
             </div>
           )}
         </div>
