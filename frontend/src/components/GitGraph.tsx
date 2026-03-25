@@ -1,4 +1,7 @@
 import React, { useMemo, useState } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import toast from 'react-hot-toast';
+import api from '../services/api';
 import type { GitGraphData, Commit } from '../types/gitGraph';
 
 export type { GitGraphData };
@@ -26,6 +29,41 @@ const BRANCH_COLORS = [
 const GitGraph: React.FC<GitGraphProps> = ({ data, owner, repo }) => {
   const [selectedCommit, setSelectedCommit] = useState<Commit | null>(null);
   const [hoveredCommit, setHoveredCommit] = useState<string | null>(null);
+  const [newBranchName, setNewBranchName] = useState('');
+  const [newTagName, setNewTagName] = useState('');
+
+  const queryClient = useQueryClient();
+
+  const createBranchMutation = useMutation({
+    mutationFn: async ({ name, sha }: { name: string; sha: string }) => {
+      const res = await api.post(`/api/branches/${owner}/${repo}`, { name, fromSha: sha });
+      return res.data;
+    },
+    onSuccess: () => {
+      toast.success('Branch created');
+      setNewBranchName('');
+      queryClient.invalidateQueries({ queryKey: ['branchesList'] });
+      queryClient.invalidateQueries({ queryKey: ['gitGraph'] });
+    },
+    onError: (err: any) => {
+      toast.error(err?.response?.data?.error || 'Failed to create branch');
+    },
+  });
+
+  const createTagMutation = useMutation({
+    mutationFn: async ({ name, sha }: { name: string; sha: string }) => {
+      const res = await api.post(`/api/branches/${owner}/${repo}/tag`, { name, fromSha: sha });
+      return res.data;
+    },
+    onSuccess: () => {
+      toast.success('Tag created');
+      setNewTagName('');
+      queryClient.invalidateQueries({ queryKey: ['gitGraph'] });
+    },
+    onError: (err: any) => {
+      toast.error(err?.response?.data?.error || 'Failed to create tag');
+    },
+  });
 
   const NODE_RADIUS = 6;
   const ROW_HEIGHT = 48;
@@ -400,14 +438,14 @@ const GitGraph: React.FC<GitGraphProps> = ({ data, owner, repo }) => {
                 </pre>
               )}
 
-              <div className="flex items-center gap-4 mt-3">
+              <div className="flex items-center gap-4 mt-3 flex-wrap">
                 <span className="font-mono text-sm text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10 px-2 py-1 rounded">
                   {selectedCommit.sha}
                 </span>
                 <span className="text-sm text-gray-500">
                   {selectedCommit.parents.length} parent{selectedCommit.parents.length !== 1 ? 's' : ''}
                 </span>
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1 flex-wrap">
                   {selectedCommit.branches.map((branch) => {
                     const branchIdx = data.branches.findIndex(b => b.name === branch);
                     const color = branchIdx >= 0 ? getColor(branchIdx) : getColor(0);
@@ -426,6 +464,87 @@ const GitGraph: React.FC<GitGraphProps> = ({ data, owner, repo }) => {
                   })}
                 </div>
               </div>
+
+              {/* Actions: create branch / tag from this commit */}
+              <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">
+                    Create branch from this commit
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={newBranchName}
+                      onChange={(e) => setNewBranchName(e.target.value)}
+                      placeholder="feature/my-branch"
+                      className="flex-1 px-2 py-1.5 rounded border border-gray-300 text-sm bg-white dark:bg-gray-900 dark:border-gray-700 dark:text-gray-100"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!newBranchName.trim()) return;
+                        createBranchMutation.mutate({ name: newBranchName.trim(), sha: selectedCommit.sha });
+                      }}
+                      disabled={createBranchMutation.isPending || !newBranchName.trim()}
+                      className="px-3 py-1.5 text-xs font-medium rounded bg-blue-600 text-white hover:bg-blue-500 disabled:opacity-50"
+                    >
+                      {createBranchMutation.isPending ? 'Creating…' : 'Create'}
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">
+                    Tag this commit
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={newTagName}
+                      onChange={(e) => setNewTagName(e.target.value)}
+                      placeholder="v1.2.3"
+                      className="flex-1 px-2 py-1.5 rounded border border-gray-300 text-sm bg-white dark:bg-gray-900 dark:border-gray-700 dark:text-gray-100"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!newTagName.trim()) return;
+                        createTagMutation.mutate({ name: newTagName.trim(), sha: selectedCommit.sha });
+                      }}
+                      disabled={createTagMutation.isPending || !newTagName.trim()}
+                      className="px-3 py-1.5 text-xs font-medium rounded bg-emerald-600 text-white hover:bg-emerald-500 disabled:opacity-50"
+                    >
+                      {createTagMutation.isPending ? 'Tagging…' : 'Tag'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Rename commit helper (CLI instructions) */}
+              <details className="mt-4">
+                <summary className="cursor-pointer text-xs text-blue-600 hover:underline">
+                  Rename this commit via Git CLI
+                </summary>
+                <pre className="mt-2 text-xs bg-gray-100 dark:bg-gray-900/50 rounded-lg p-3 overflow-auto">
+{`# On your machine
+# Choose a branch that contains commit ${selectedCommit.shortSha}
+# (for example: ${selectedCommit.branches[0] || '<branch-name>'})
+
+git fetch origin
+git checkout ${selectedCommit.branches[0] || '<branch-name>'}
+# Start an interactive rebase from the parent of this commit
+${selectedCommit.parents[0]
+  ? `git rebase -i ${selectedCommit.parents[0]}
+`
+  : '# This commit has no recorded parent – rename via rebase starting earlier in history\n'}
+# In the editor, change "pick" to "reword" for commit ${selectedCommit.shortSha}
+# Then enter the new commit message when prompted
+# Finally, force-push the updated branch:
+
+git push --force-with-lease origin ${selectedCommit.branches[0] || '<branch-name>'}
+`}
+                </pre>
+              </details>
             </div>
 
             <div className="flex items-center gap-2 ml-4">

@@ -99,6 +99,34 @@ export async function getDefaultBranch(accessToken: string, owner: string, repo:
   return data.default_branch;
 }
 
+// Create a new branch ref pointing at a specific commit
+export async function createBranchFromCommit(
+  accessToken: string,
+  owner: string,
+  repo: string,
+  branch: string,
+  sha: string,
+) {
+  const octokit = getOctokit(accessToken);
+  const ref = `refs/heads/${branch}`;
+  const { data } = await octokit.git.createRef({ owner, repo, ref, sha });
+  return data;
+}
+
+// Create a lightweight tag pointing at a specific commit
+export async function createTagFromCommit(
+  accessToken: string,
+  owner: string,
+  repo: string,
+  tag: string,
+  sha: string,
+) {
+  const octokit = getOctokit(accessToken);
+  const ref = `refs/tags/${tag}`;
+  const { data } = await octokit.git.createRef({ owner, repo, ref, sha });
+  return data;
+}
+
 // ==================== PR REVIEW FEATURES ====================
 
 export async function getPullRequest(accessToken: string, owner: string, repo: string, pullNumber: number) {
