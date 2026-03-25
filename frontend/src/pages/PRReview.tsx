@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../services/api';
 
@@ -33,8 +33,12 @@ interface Comment {
 const PRReview = () => {
   const { owner, repo, pullNumber } = useParams();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<'conversation' | 'files' | 'commits'>('conversation');
   const [expandedFiles, setExpandedFiles] = useState<Set<string>>(new Set());
+  const [mergeMethod, setMergeMethod] = useState<'merge' | 'squash' | 'rebase'>('merge');
+  const [mergeResult, setMergeResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [showMergePanel, setShowMergePanel] = useState(false);
 
   const { data: pr, isLoading, error } = useQuery({
     queryKey: ['pr', owner, repo, pullNumber],
@@ -43,6 +47,24 @@ const PRReview = () => {
       return res.data;
     },
     enabled: !!owner && !!repo && !!pullNumber,
+  });
+
+  const mergeMutation = useMutation({
+    mutationFn: async () => {
+      const res = await api.post(`/api/pulls/${owner}/${repo}/${pullNumber}/merge`, {
+        merge_method: mergeMethod,
+      });
+      return res.data;
+    },
+    onSuccess: (data) => {
+      setMergeResult({ success: true, message: data.message || 'Pull request successfully merged!' });
+      queryClient.invalidateQueries({ queryKey: ['pr', owner, repo, pullNumber] });
+      queryClient.invalidateQueries({ queryKey: ['pulls'] });
+    },
+    onError: (err: any) => {
+      const message = err?.response?.data?.error || 'Failed to merge pull request.';
+      setMergeResult({ success: false, message });
+    },
   });
 
   const toggleFile = (filename: string) => {
@@ -93,6 +115,9 @@ const PRReview = () => {
     );
   }
 
+  const isMerged = pr.merged;
+  const isOpen = pr.state === 'open' && !isMerged;
+
   return (
     <div className="space-y-6" data-testid="pr-review-page">
       {/* Header */}
@@ -117,15 +142,64 @@ const PRReview = () => {
               <span className="font-mono bg-gray-100 px-1 rounded">{pr.base?.ref}</span>
             </p>
           </div>
-          <a
-            href={pr.html_url}
-            target="_blank"
-            rel="noreferrer"
-            className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm"
-          >
-            View on GitHub
-          </a>
+          <div className="flex items-center gap-2">
+            {isOpen && (
+              <button
+                onClick={() => { setShowMergePanel(!showMergePanel); setMergeResult(null); }}
+                className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors"
+              >
+                {showMergePanel ? 'Cancel' : '⬇ Merge PR'}
+              </button>
+            )}
+            <a
+              href={pr.html_url}
+              target="_blank"
+              rel="noreferrer"
+              className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm"
+            >
+              View on GitHub
+            </a>
+          </div>
         </div>
+
+        {/* Merge Panel */}
+        {isOpen && showMergePanel && (
+          <div className="mt-4 border border-green-200 bg-green-50 rounded-lg p-4">
+            {mergeResult ? (
+              <div className={`flex items-center gap-3 p-3 rounded-lg ${
+                mergeResult.success ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+              }`}>
+                <span className="text-lg">{mergeResult.success ? '✅' : '❌'}</span>
+                <span className="text-sm font-medium">{mergeResult.message}</span>
+              </div>
+            ) : (
+              <>
+                <p className="text-sm font-medium text-gray-700 mb-3">Merge pull request into <span className="font-mono bg-white px-1 rounded border">{pr.base?.ref}</span></p>
+                <div className="flex items-center gap-3 flex-wrap">
+                  <div className="flex items-center gap-2">
+                    <label className="text-xs text-gray-600 font-medium">Method:</label>
+                    <select
+                      value={mergeMethod}
+                      onChange={(e) => setMergeMethod(e.target.value as any)}
+                      className="text-sm border border-gray-300 rounded px-2 py-1 bg-white"
+                    >
+                      <option value="merge">Create a merge commit</option>
+                      <option value="squash">Squash and merge</option>
+                      <option value="rebase">Rebase and merge</option>
+                    </select>
+                  </div>
+                  <button
+                    onClick={() => mergeMutation.mutate()}
+                    disabled={mergeMutation.isPending}
+                    className="px-4 py-1.5 bg-green-600 hover:bg-green-700 disabled:opacity-60 text-white rounded text-sm font-medium transition-colors"
+                  >
+                    {mergeMutation.isPending ? 'Merging...' : 'Confirm Merge'}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        )}
 
         {/* Stats */}
         <div className="mt-4 flex items-center gap-6 text-sm">

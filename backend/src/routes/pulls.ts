@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { getUserPullRequests, getPullRequest, getPullRequestDiff, getRepoPullRequests } from '../services/github';
+import axios from 'axios';
 
 const router = Router();
 const requireAuth = (req: Request, res: Response, next: any) => {
@@ -70,6 +71,40 @@ router.get('/:owner/:repo/:pullNumber/diff', requireAuth, async (req: Request, r
   } catch (err: any) {
     console.error('Get PR diff error:', err);
     res.status(500).json({ error: 'Failed to fetch diff', message: err.message });
+  }
+});
+
+// Merge a PR directly from the dashboard
+router.post('/:owner/:repo/:pullNumber/merge', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const user = req.user as any;
+    const owner = String(req.params.owner);
+    const repo = String(req.params.repo);
+    const pullNumber = parseInt(String(req.params.pullNumber));
+
+    if (isNaN(pullNumber)) {
+      return res.status(400).json({ error: 'Invalid pull request number' });
+    }
+
+    const { merge_method = 'merge', commit_title, commit_message } = req.body;
+
+    const response = await axios.put(
+      `https://api.github.com/repos/${owner}/${repo}/pulls/${pullNumber}/merge`,
+      { merge_method, commit_title, commit_message },
+      {
+        headers: {
+          Authorization: `token ${user.accessToken}`,
+          Accept: 'application/vnd.github+json',
+        },
+      }
+    );
+
+    res.json({ merged: true, message: response.data.message, sha: response.data.sha });
+  } catch (err: any) {
+    console.error('Merge PR error:', err?.response?.data || err.message);
+    const status = err?.response?.status || 500;
+    const message = err?.response?.data?.message || 'Failed to merge pull request';
+    res.status(status).json({ error: message });
   }
 });
 
