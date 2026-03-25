@@ -86,6 +86,19 @@ export async function getRepoBranches(accessToken: string, owner: string, repo: 
   return data;
 }
 
+// Delete a branch by name
+export async function deleteBranch(accessToken: string, owner: string, repo: string, branch: string) {
+  const octokit = getOctokit(accessToken);
+  await octokit.git.deleteRef({ owner, repo, ref: `heads/${branch}` });
+}
+
+// Get the default branch name for a repo
+export async function getDefaultBranch(accessToken: string, owner: string, repo: string): Promise<string> {
+  const octokit = getOctokit(accessToken);
+  const { data } = await octokit.repos.get({ owner, repo });
+  return data.default_branch;
+}
+
 // ==================== PR REVIEW FEATURES ====================
 
 export async function getPullRequest(accessToken: string, owner: string, repo: string, pullNumber: number) {
@@ -420,6 +433,64 @@ export async function getIssueComments(accessToken: string, owner: string, repo:
     html_url: comment.html_url,
     reactions: comment.reactions,
   }));
+}
+
+// Create a new issue
+export async function createIssue(accessToken: string, owner: string, repo: string, options: {
+  title: string;
+  body?: string;
+  labels?: string[];
+  assignees?: string[];
+  milestone?: number;
+}) {
+  const octokit = getOctokit(accessToken);
+  const { data } = await octokit.issues.create({ owner, repo, ...options });
+  return {
+    id: data.id,
+    number: data.number,
+    title: data.title,
+    state: data.state,
+    body: data.body,
+    user: { login: data.user?.login, avatar_url: data.user?.avatar_url, html_url: data.user?.html_url },
+    labels: data.labels,
+    assignees: data.assignees,
+    milestone: data.milestone,
+    comments: data.comments,
+    created_at: data.created_at,
+    updated_at: data.updated_at,
+    closed_at: data.closed_at,
+    html_url: data.html_url,
+  };
+}
+
+// Update an existing issue (title, body, state, labels, assignees)
+export async function updateIssue(accessToken: string, owner: string, repo: string, issueNumber: number, options: {
+  title?: string;
+  body?: string;
+  state?: 'open' | 'closed';
+  state_reason?: 'completed' | 'not_planned' | 'reopened';
+  labels?: string[];
+  assignees?: string[];
+  milestone?: number | null;
+}) {
+  const octokit = getOctokit(accessToken);
+  const { data } = await octokit.issues.update({ owner, repo, issue_number: issueNumber, ...options });
+  return {
+    id: data.id,
+    number: data.number,
+    title: data.title,
+    state: data.state,
+    body: data.body,
+    user: { login: data.user?.login, avatar_url: data.user?.avatar_url, html_url: data.user?.html_url },
+    labels: data.labels,
+    assignees: data.assignees,
+    milestone: data.milestone,
+    comments: data.comments,
+    created_at: data.created_at,
+    updated_at: data.updated_at,
+    closed_at: data.closed_at,
+    html_url: data.html_url,
+  };
 }
 
 export async function getUserPullRequests(accessToken: string) {
@@ -1169,4 +1240,3 @@ export async function getUserActivity(accessToken: string, username: string) {
     })),
   };
 }
-
