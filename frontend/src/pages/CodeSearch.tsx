@@ -39,8 +39,8 @@ const CodeSearch = () => {
 
   const highlightCode = (fragment: string) => {
     return fragment.split('\n').map((line, i) => (
-      <div key={i} className="hover:bg-yellow-50">
-        <span className="select-none text-gray-400 pr-4">{i + 1}</span>
+      <div key={i} className="hover:bg-yellow-50 dark:hover:bg-yellow-900/20">
+        <span className="select-none text-gray-400 dark:text-gray-500 pr-4">{i + 1}</span>
         {line}
       </div>
     ));
@@ -49,11 +49,11 @@ const CodeSearch = () => {
   return (
     <div className="space-y-6" data-testid="code-search-page">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Code Search</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Code Search</h1>
       </div>
 
       {/* Search Form */}
-      <form onSubmit={handleSearch} className="bg-white rounded-lg shadow p-6">
+      <form onSubmit={handleSearch} className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 border border-gray-200 dark:border-gray-700">
         <div className="flex gap-4">
           <div className="flex-1">
             <div className="relative">
@@ -62,10 +62,10 @@ const CodeSearch = () => {
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search code across your repositories..."
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
                 data-testid="search-input"
               />
-              <svg className="absolute left-3 top-3.5 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="absolute left-3 top-3.5 w-5 h-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
             </div>
@@ -73,7 +73,7 @@ const CodeSearch = () => {
           <select
             value={searchType}
             onChange={(e) => setSearchType(e.target.value as 'code' | 'repos')}
-            className="px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
           >
             <option value="code">Code</option>
             <option value="repos">Repositories</option>
@@ -85,8 +85,8 @@ const CodeSearch = () => {
             Search
           </button>
         </div>
-        <div className="mt-3 text-sm text-gray-500">
-          <p>Tips: Use qualifiers like <code className="bg-gray-100 px-1 rounded">repo:owner/name</code>, <code className="bg-gray-100 px-1 rounded">language:javascript</code>, <code className="bg-gray-100 px-1 rounded">extension:tsx</code></p>
+        <div className="mt-3 text-sm text-gray-500 dark:text-gray-400">
+          <p>Tips: Use qualifiers like <code className="bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-1 rounded">repo:owner/name</code>, <code className="bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-1 rounded">language:javascript</code>, <code className="bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-1 rounded">extension:tsx</code></p>
         </div>
       </form>
 
@@ -98,34 +98,34 @@ const CodeSearch = () => {
       )}
 
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center text-red-600">
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6 text-center text-red-600 dark:text-red-400">
           Failed to search. Please try again.
         </div>
       )}
 
       {data && searchType === 'code' && (
         <div className="space-y-4">
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-gray-500 dark:text-gray-400">
             Found {data.total_count?.toLocaleString() || 0} code results
           </p>
           {data.items?.map((item: SearchResult) => (
-            <div key={item.sha} className="bg-white rounded-lg shadow overflow-hidden">
-              <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
+            <div key={item.sha} className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden border border-gray-200 dark:border-gray-700">
+              <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
                 <div>
                   <a
                     href={item.repository.html_url}
                     target="_blank"
                     rel="noreferrer"
-                    className="text-blue-600 hover:underline font-medium"
+                    className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
                   >
                     {item.repository.full_name}
                   </a>
-                  <span className="mx-2 text-gray-400">/</span>
+                  <span className="mx-2 text-gray-400 dark:text-gray-500">/</span>
                   <a
                     href={item.html_url}
                     target="_blank"
                     rel="noreferrer"
-                    className="text-blue-600 hover:underline"
+                    className="text-blue-600 dark:text-blue-400 hover:underline"
                   >
                     {item.path}
                   </a>
@@ -134,14 +134,14 @@ const CodeSearch = () => {
                   href={item.html_url}
                   target="_blank"
                   rel="noreferrer"
-                  className="text-sm text-gray-500 hover:text-gray-700"
+                  className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
                 >
                   View file →
                 </a>
               </div>
               {item.text_matches?.map((match, i) => (
-                <div key={i} className="px-4 py-3 bg-gray-50 border-t border-gray-100">
-                  <pre className="text-sm font-mono overflow-x-auto">
+                <div key={i} className="px-4 py-3 bg-gray-50 dark:bg-gray-900/50 border-t border-gray-100 dark:border-gray-700">
+                  <pre className="text-sm font-mono overflow-x-auto text-gray-800 dark:text-gray-200">
                     {highlightCode(match.fragment)}
                   </pre>
                 </div>
@@ -153,26 +153,26 @@ const CodeSearch = () => {
 
       {data && searchType === 'repos' && (
         <div className="space-y-4">
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-gray-500 dark:text-gray-400">
             Found {data.total_count?.toLocaleString() || 0} repositories
           </p>
           <div className="grid gap-4">
             {data.items?.map((repo: any) => (
-              <div key={repo.id} className="bg-white rounded-lg shadow p-6">
+              <div key={repo.id} className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 border border-gray-200 dark:border-gray-700">
                 <div className="flex items-start justify-between">
                   <div>
                     <a
                       href={repo.html_url}
                       target="_blank"
                       rel="noreferrer"
-                      className="text-lg font-semibold text-blue-600 hover:underline"
+                      className="text-lg font-semibold text-blue-600 dark:text-blue-400 hover:underline"
                     >
                       {repo.full_name}
                     </a>
                     {repo.description && (
-                      <p className="mt-1 text-gray-600">{repo.description}</p>
+                      <p className="mt-1 text-gray-600 dark:text-gray-400">{repo.description}</p>
                     )}
-                    <div className="mt-3 flex items-center gap-4 text-sm text-gray-500">
+                    <div className="mt-3 flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
                       {repo.language && (
                         <span className="flex items-center gap-1">
                           <span className="w-3 h-3 rounded-full bg-blue-500"></span>
@@ -192,13 +192,13 @@ const CodeSearch = () => {
       )}
 
       {!isLoading && !data && searchTerm && (
-        <div className="text-center py-12 text-gray-500">
+        <div className="text-center py-12 text-gray-500 dark:text-gray-400">
           No results found for "{searchTerm}"
         </div>
       )}
 
       {!searchTerm && (
-        <div className="text-center py-12 text-gray-500">
+        <div className="text-center py-12 text-gray-500 dark:text-gray-400">
           Enter a search query to find code or repositories
         </div>
       )}
