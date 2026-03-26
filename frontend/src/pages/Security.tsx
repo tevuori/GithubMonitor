@@ -85,7 +85,7 @@ const Security = () => {
       case 'high': return 'bg-orange-500 text-white';
       case 'medium': return 'bg-amber-500 text-white';
       case 'low': return 'bg-blue-500 text-white';
-      default: return 'bg-gray-500 text-white';
+      default: return 'bg-gray-500 dark:bg-gray-800 text-white';
     }
   };
 
@@ -93,8 +93,8 @@ const Security = () => {
     switch (state) {
       case 'open': return 'text-red-600 bg-red-50';
       case 'fixed': return 'text-green-600 bg-green-50';
-      case 'dismissed': return 'text-gray-600 bg-gray-100';
-      default: return 'text-gray-600 bg-gray-100';
+      case 'dismissed': return 'text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-800';
+      default: return 'text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-800';
     }
   };
 
@@ -116,15 +116,15 @@ const Security = () => {
   return (
     <div className="space-y-6" data-testid="security-page">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Security Alerts</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-300">Security Alerts</h1>
       </div>
 
       {/* Repository selector */}
-      <div className="bg-white rounded-lg shadow p-4">
-        <label className="block text-sm font-medium text-gray-700 mb-2">Repository</label>
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Repository</label>
         <select
           data-testid="security-repo-selector"
-          className="w-full md:w-64 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+          className="w-full md:w-64 px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500"
           value={selectedRepo?.full_name || ''}
           onChange={(e) => {
             const repo = repos?.find(r => r.full_name === e.target.value);
@@ -140,19 +140,19 @@ const Security = () => {
       {/* Summary Cards */}
       {security && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-white rounded-lg shadow p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
             <div className="text-sm text-gray-500">Total Alerts</div>
-            <div className="text-3xl font-bold text-gray-900">{security.summary.total}</div>
+            <div className="text-3xl font-bold text-gray-900 dark:text-gray-300">{security.summary.total}</div>
           </div>
-          <div className="bg-white rounded-lg shadow p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
             <div className="text-sm text-gray-500">Dependabot</div>
             <div className="text-3xl font-bold text-amber-600">{security.summary.dependabot}</div>
           </div>
-          <div className="bg-white rounded-lg shadow p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
             <div className="text-sm text-gray-500">Code Scanning</div>
             <div className="text-3xl font-bold text-blue-600">{security.summary.codeScanning}</div>
           </div>
-          <div className="bg-white rounded-lg shadow p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
             <div className="text-sm text-gray-500">Secret Scanning</div>
             <div className="text-3xl font-bold text-red-600">{security.summary.secretScanning}</div>
           </div>
@@ -160,17 +160,17 @@ const Security = () => {
       )}
 
       {/* Filters */}
-      <div className="bg-white rounded-lg shadow p-4">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
         <div className="flex flex-wrap gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">State</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">State</label>
             <div className="flex gap-2">
               {(['open', 'fixed', 'dismissed'] as const).map((state) => (
                 <button
                   key={state}
                   onClick={() => setAlertState(state)}
                   className={`px-3 py-1.5 rounded-lg text-sm font-medium capitalize transition-colors ${
-                    alertState === state ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    alertState === state ? 'bg-blue-600 text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:bg-gray-800'
                   }`}
                 >
                   {state}
@@ -179,9 +179,9 @@ const Security = () => {
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Severity</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Severity</label>
             <select
-              className="px-3 py-2 border border-gray-300 rounded-lg"
+              className="px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg"
               value={severityFilter}
               onChange={(e) => setSeverityFilter(e.target.value)}
             >
@@ -196,9 +196,9 @@ const Security = () => {
       </div>
 
       {/* Dependabot Alerts */}
-      <div className="bg-white rounded-lg shadow">
-        <div className="px-4 py-3 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
+        <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-300">
             Dependabot Alerts ({filteredAlerts.length})
           </h2>
         </div>
@@ -209,7 +209,7 @@ const Security = () => {
         ) : filteredAlerts.length > 0 ? (
           <div className="divide-y divide-gray-100">
             {filteredAlerts.map((alert) => (
-              <div key={alert.number} className="p-4 hover:bg-gray-50">
+              <div key={alert.number} className="p-4 hover:bg-gray-50 dark:bg-gray-800">
                 <div className="flex items-start gap-4">
                   <div className="flex-shrink-0">
                     <span className={`px-2 py-1 rounded text-xs font-medium ${getSeverityColor(alert.security_vulnerability?.severity)}`}>
@@ -218,7 +218,7 @@ const Security = () => {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <h3 className="text-sm font-medium text-gray-900">
+                      <h3 className="text-sm font-medium text-gray-900 dark:text-gray-300">
                         {alert.security_advisory?.summary}
                       </h3>
                       <span className={`px-2 py-0.5 rounded text-xs ${getStateColor(alert.state)}`}>
@@ -226,13 +226,13 @@ const Security = () => {
                       </span>
                     </div>
                     <div className="mt-1 flex items-center gap-4 text-xs text-gray-500">
-                      <span className="font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                      <span className="font-mono bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded">
                         {alert.dependency?.package?.name}
                       </span>
                       <span>{alert.dependency?.package?.ecosystem}</span>
                       <span>{alert.dependency?.manifest_path}</span>
                     </div>
-                    <div className="mt-2 text-sm text-gray-600">
+                    <div className="mt-2 text-sm text-gray-600 dark:text-gray-300">
                       <p className="line-clamp-2">{alert.security_advisory?.description}</p>
                     </div>
                     <div className="mt-2 flex items-center gap-4 text-xs text-gray-500">
@@ -252,7 +252,7 @@ const Security = () => {
                       href={alert.html_url}
                       target="_blank"
                       rel="noreferrer"
-                      className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm"
+                      className="px-3 py-1.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:bg-gray-800 text-sm"
                     >
                       View
                     </a>
@@ -266,7 +266,7 @@ const Security = () => {
             <svg className="w-16 h-16 text-green-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
             </svg>
-            <h3 className="text-lg font-medium text-gray-700">No security alerts</h3>
+            <h3 className="text-lg font-medium text-gray-700 dark:text-gray-300">No security alerts</h3>
             <p className="text-gray-500 mt-1">
               {security?.summary.total === 0 
                 ? 'Great! No security vulnerabilities found.' 

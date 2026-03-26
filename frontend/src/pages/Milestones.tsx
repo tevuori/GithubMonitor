@@ -133,7 +133,7 @@ const Milestones = () => {
     switch (status) {
       case 'overdue': return 'text-red-600 bg-red-50';
       case 'soon': return 'text-amber-600 bg-amber-50';
-      case 'closed': return 'text-gray-600 bg-gray-100';
+      case 'closed': return 'text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-800';
       default: return 'text-green-600 bg-green-50';
     }
   };
@@ -149,7 +149,7 @@ const Milestones = () => {
   return (
     <div className="space-y-6" data-testid="milestones-page">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Milestones & Projects</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-300">Milestones & Projects</h1>
         {activeTab === 'milestones' && (
           <button
             onClick={() => setShowCreateModal(true)}
@@ -164,10 +164,10 @@ const Milestones = () => {
       </div>
 
       {/* Repository selector */}
-      <div className="bg-white rounded-lg shadow p-4">
-        <label className="block text-sm font-medium text-gray-700 mb-2">Repository</label>
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Repository</label>
         <select
-          className="w-full md:w-64 px-3 py-2 border border-gray-300 rounded-lg"
+          className="w-full md:w-64 px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg"
           value={selectedRepo?.full_name || ''}
           onChange={(e) => {
             const repo = repos?.find(r => r.full_name === e.target.value);
@@ -181,15 +181,15 @@ const Milestones = () => {
       </div>
 
       {/* Tabs */}
-      <div className="bg-white rounded-lg shadow">
-        <div className="border-b border-gray-200">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
+        <div className="border-b border-gray-200 dark:border-gray-700">
           <nav className="flex -mb-px">
             <button
               onClick={() => setActiveTab('milestones')}
               className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${
                 activeTab === 'milestones'
                   ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-300'
               }`}
             >
               Milestones
@@ -199,7 +199,7 @@ const Milestones = () => {
               className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${
                 activeTab === 'projects'
                   ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-300'
               }`}
             >
               Projects (Classic)
@@ -220,7 +220,7 @@ const Milestones = () => {
                     className={`px-3 py-1.5 rounded-lg text-sm font-medium capitalize transition-colors ${
                       milestoneState === state
                         ? 'bg-blue-600 text-white'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:bg-gray-800'
                     }`}
                   >
                     {state}
@@ -237,7 +237,7 @@ const Milestones = () => {
                   {milestones.map((milestone) => {
                     const dueStatus = getDueStatus(milestone.due_on, milestone.state);
                     return (
-                      <div key={milestone.id} className="border border-gray-200 rounded-lg p-4">
+                      <div key={milestone.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
                             <div className="flex items-center gap-3">
@@ -245,18 +245,18 @@ const Milestones = () => {
                                 href={milestone.html_url}
                                 target="_blank"
                                 rel="noreferrer"
-                                className="text-lg font-semibold text-gray-900 hover:text-blue-600"
+                                className="text-lg font-semibold text-gray-900 dark:text-gray-300 hover:text-blue-600"
                               >
                                 {milestone.title}
                               </a>
                               <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-                                milestone.state === 'open' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
+                                milestone.state === 'open' ? 'bg-green-100 text-green-700' : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300'
                               }`}>
                                 {milestone.state}
                               </span>
                             </div>
                             {milestone.description && (
-                              <p className="text-sm text-gray-600 mt-1">{milestone.description}</p>
+                              <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">{milestone.description}</p>
                             )}
                             <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
                               <span className={`px-2 py-0.5 rounded ${getDueColor(dueStatus)}`}>
@@ -274,7 +274,7 @@ const Milestones = () => {
                             <span>{milestone.progress}% complete</span>
                             <span>{milestone.closed_issues} / {milestone.open_issues + milestone.closed_issues}</span>
                           </div>
-                          <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+                          <div className="w-full h-2 bg-gray-200 dark:bg-gray-800 rounded-full overflow-hidden">
                             <div
                               className="h-full bg-green-500 transition-all"
                               style={{ width: `${milestone.progress}%` }}
@@ -290,7 +290,7 @@ const Milestones = () => {
                   <svg className="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
                   </svg>
-                  <h3 className="text-lg font-medium text-gray-700">No milestones</h3>
+                  <h3 className="text-lg font-medium text-gray-700 dark:text-gray-300">No milestones</h3>
                   <p className="text-gray-500 mt-1">Create a milestone to track progress on issues.</p>
                 </div>
               )}
@@ -312,16 +312,16 @@ const Milestones = () => {
                       href={project.html_url}
                       target="_blank"
                       rel="noreferrer"
-                      className="border border-gray-200 rounded-lg p-4 hover:border-blue-300 hover:shadow-md transition-all"
+                      className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:border-blue-300 hover:shadow-md transition-all"
                     >
                       <div className="flex items-center gap-2">
                         <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
                         </svg>
-                        <h3 className="font-medium text-gray-900">{project.name}</h3>
+                        <h3 className="font-medium text-gray-900 dark:text-gray-300">{project.name}</h3>
                       </div>
                       {project.body && (
-                        <p className="text-sm text-gray-600 mt-2 line-clamp-2">{project.body}</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-300 mt-2 line-clamp-2">{project.body}</p>
                       )}
                       <div className="text-xs text-gray-500 mt-2">
                         Updated {formatDate(project.updated_at)}
@@ -334,7 +334,7 @@ const Milestones = () => {
                   <svg className="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
                   </svg>
-                  <h3 className="text-lg font-medium text-gray-700">No classic projects</h3>
+                  <h3 className="text-lg font-medium text-gray-700 dark:text-gray-300">No classic projects</h3>
                   <p className="text-gray-500 mt-1">Projects (classic) may be disabled or use the new Projects feature.</p>
                 </div>
               )}
@@ -346,10 +346,10 @@ const Milestones = () => {
       {/* Create Milestone Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-lg w-full mx-4">
-            <div className="p-4 border-b border-gray-200 flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-gray-900">Create Milestone</h2>
-              <button onClick={() => setShowCreateModal(false)} className="text-gray-400 hover:text-gray-600">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-lg w-full mx-4">
+            <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-300">Create Milestone</h2>
+              <button onClick={() => setShowCreateModal(false)} className="text-gray-400 hover:text-gray-600 dark:text-gray-300">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
@@ -363,40 +363,40 @@ const Milestones = () => {
               className="p-4 space-y-4"
             >
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Title *</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Title *</label>
                 <input
                   type="text"
                   required
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                   placeholder="v1.0 Release"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
                 <textarea
                   rows={3}
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   placeholder="Milestone description..."
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Due Date</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Due Date</label>
                 <input
                   type="date"
                   value={formData.due_on}
                   onChange={(e) => setFormData({ ...formData, due_on: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg"
                 />
               </div>
               <div className="flex justify-end gap-3 pt-4 border-t">
                 <button
                   type="button"
                   onClick={() => setShowCreateModal(false)}
-                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
+                  className="px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:bg-gray-800"
                 >
                   Cancel
                 </button>

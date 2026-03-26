@@ -139,22 +139,22 @@ const ActivityFeed = () => {
   return (
     <div className="space-y-6" data-testid="activity-feed-page">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Activity Feed</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-300">Activity Feed</h1>
         <div className="flex items-center gap-3">
           <button
             onClick={() => setIsLive(!isLive)}
             className={`px-4 py-2 rounded-lg flex items-center gap-2 transition-colors ${
               isLive
                 ? 'bg-green-600 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:bg-gray-800'
             }`}
           >
-            <span className={`w-2 h-2 rounded-full ${isLive ? 'bg-white animate-pulse' : 'bg-gray-400'}`}></span>
+            <span className={`w-2 h-2 rounded-full ${isLive ? 'bg-white dark:bg-gray-800 animate-pulse' : 'bg-gray-400 dark:bg-gray-800'}`}></span>
             {isLive ? 'Live' : 'Go Live'}
           </button>
           <button
             onClick={() => refetch()}
-            className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+            className="px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:bg-gray-800 transition-colors"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -164,12 +164,12 @@ const ActivityFeed = () => {
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-lg shadow p-4">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
         <div className="flex flex-wrap gap-2">
           <button
             onClick={() => setFilter('all')}
             className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-              filter === 'all' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              filter === 'all' ? 'bg-blue-600 text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:bg-gray-800'
             }`}
           >
             All Events
@@ -179,7 +179,7 @@ const ActivityFeed = () => {
               key={type}
               onClick={() => setFilter(type)}
               className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-1 ${
-                filter === type ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                filter === type ? 'bg-blue-600 text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:bg-gray-800'
               }`}
             >
               <span>{EVENT_ICONS[type]?.icon || '📌'}</span>
@@ -191,23 +191,23 @@ const ActivityFeed = () => {
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-white rounded-lg shadow p-4">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
           <div className="text-sm text-gray-500">Total Events</div>
-          <div className="text-2xl font-bold text-gray-900">{events.length}</div>
+          <div className="text-2xl font-bold text-gray-900 dark:text-gray-300">{events.length}</div>
         </div>
-        <div className="bg-white rounded-lg shadow p-4">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
           <div className="text-sm text-gray-500">Push Events</div>
           <div className="text-2xl font-bold text-green-600">
             {events.filter((e) => e.type === 'PushEvent').length}
           </div>
         </div>
-        <div className="bg-white rounded-lg shadow p-4">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
           <div className="text-sm text-gray-500">PR Events</div>
           <div className="text-2xl font-bold text-purple-600">
             {events.filter((e) => e.type === 'PullRequestEvent').length}
           </div>
         </div>
-        <div className="bg-white rounded-lg shadow p-4">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
           <div className="text-sm text-gray-500">Issue Events</div>
           <div className="text-2xl font-bold text-amber-600">
             {events.filter((e) => e.type === 'IssuesEvent' || e.type === 'IssueCommentEvent').length}
@@ -216,9 +216,9 @@ const ActivityFeed = () => {
       </div>
 
       {/* Events List */}
-      <div className="bg-white rounded-lg shadow">
-        <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-gray-900">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
+        <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-300">
             Recent Activity ({filteredEvents.length})
           </h2>
           {isLive && (
@@ -235,9 +235,9 @@ const ActivityFeed = () => {
         ) : filteredEvents.length > 0 ? (
           <div className="divide-y divide-gray-100 max-h-[600px] overflow-y-auto">
             {filteredEvents.map((event) => {
-              const eventInfo = EVENT_ICONS[event.type] || { icon: '📌', color: 'text-gray-600' };
+              const eventInfo = EVENT_ICONS[event.type] || { icon: '📌', color: 'text-gray-600 dark:text-gray-300' };
               return (
-                <div key={event.id} className="px-4 py-3 hover:bg-gray-50 transition-colors">
+                <div key={event.id} className="px-4 py-3 hover:bg-gray-50 dark:bg-gray-800 transition-colors">
                   <div className="flex items-start gap-3">
                     <img
                       src={event.actor.avatar_url}
@@ -247,7 +247,7 @@ const ActivityFeed = () => {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <span className="text-lg">{eventInfo.icon}</span>
-                        <span className="font-medium text-gray-900">{event.actor.login}</span>
+                        <span className="font-medium text-gray-900 dark:text-gray-300">{event.actor.login}</span>
                         <span className="text-gray-500">{getEventDescription(event)}</span>
                       </div>
                       <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
@@ -267,7 +267,7 @@ const ActivityFeed = () => {
 
                       {/* Extra payload info */}
                       {event.type === 'PushEvent' && event.payload.commits && (
-                        <div className="mt-2 text-xs text-gray-600 bg-gray-50 p-2 rounded">
+                        <div className="mt-2 text-xs text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-800 p-2 rounded">
                           {event.payload.commits.slice(0, 3).map((commit: any, idx: number) => (
                             <div key={idx} className="truncate">
                               <span className="font-mono text-blue-600">{commit.sha?.slice(0, 7)}</span>
@@ -281,7 +281,7 @@ const ActivityFeed = () => {
                       )}
 
                       {event.type === 'PullRequestEvent' && event.payload.pull_request && (
-                        <div className="mt-2 text-xs text-gray-600">
+                        <div className="mt-2 text-xs text-gray-600 dark:text-gray-300">
                           <a
                             href={event.payload.pull_request.html_url}
                             target="_blank"
@@ -294,7 +294,7 @@ const ActivityFeed = () => {
                       )}
 
                       {event.type === 'IssuesEvent' && event.payload.issue && (
-                        <div className="mt-2 text-xs text-gray-600">
+                        <div className="mt-2 text-xs text-gray-600 dark:text-gray-300">
                           <a
                             href={event.payload.issue.html_url}
                             target="_blank"
@@ -316,7 +316,7 @@ const ActivityFeed = () => {
             <svg className="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <h3 className="text-lg font-medium text-gray-700">No activity found</h3>
+            <h3 className="text-lg font-medium text-gray-700 dark:text-gray-300">No activity found</h3>
             <p className="text-gray-500 mt-1">
               {filter !== 'all' ? 'No events match your filter.' : 'No recent activity to show.'}
             </p>

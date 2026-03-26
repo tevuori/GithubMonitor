@@ -134,18 +134,18 @@ const Reports = () => {
   return (
     <div className="space-y-6" data-testid="reports-page">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Reports & Export</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-300">Reports & Export</h1>
       </div>
 
       {/* Report Type Selector */}
-      <div className="bg-white rounded-lg shadow p-4">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
         <div className="flex gap-4">
           <button
             onClick={() => setReportType('user')}
             className={`px-4 py-2 rounded-lg font-medium transition-colors ${
               reportType === 'user'
                 ? 'bg-blue-600 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:bg-gray-800'
             }`}
           >
             User Overview
@@ -155,7 +155,7 @@ const Reports = () => {
             className={`px-4 py-2 rounded-lg font-medium transition-colors ${
               reportType === 'weekly'
                 ? 'bg-blue-600 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:bg-gray-800'
             }`}
           >
             Weekly Activity
@@ -165,10 +165,10 @@ const Reports = () => {
 
       {/* User Report */}
       {reportType === 'user' && (
-        <div className="bg-white rounded-lg shadow">
-          <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
+          <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
             <div>
-              <h2 className="text-lg font-semibold text-gray-900">User Overview Report</h2>
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-300">User Overview Report</h2>
               {userReport && (
                 <p className="text-xs text-gray-500">Generated: {formatDate(userReport.generatedAt)}</p>
               )}
@@ -176,7 +176,7 @@ const Reports = () => {
             <div className="flex gap-2">
               <button
                 onClick={() => refetchUser()}
-                className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm"
+                className="px-3 py-1.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:bg-gray-800 text-sm"
               >
                 Refresh
               </button>
@@ -208,21 +208,21 @@ const Reports = () => {
             <div className="p-6 space-y-6">
               {/* Summary Stats */}
               <div>
-                <h3 className="text-lg font-medium text-gray-900 mb-4">Summary</h3>
+                <h3 className="text-lg font-medium text-gray-900 dark:text-gray-300 mb-4">Summary</h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <div className="text-3xl font-bold text-gray-900">{userReport.summary.totalRepos}</div>
+                  <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
+                    <div className="text-3xl font-bold text-gray-900 dark:text-gray-300">{userReport.summary.totalRepos}</div>
                     <div className="text-sm text-gray-500">Total Repos</div>
                   </div>
-                  <div className="bg-gray-50 rounded-lg p-4">
+                  <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
                     <div className="text-3xl font-bold text-amber-600">{userReport.summary.totalStars}</div>
                     <div className="text-sm text-gray-500">Total Stars</div>
                   </div>
-                  <div className="bg-gray-50 rounded-lg p-4">
+                  <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
                     <div className="text-3xl font-bold text-blue-600">{userReport.summary.totalForks}</div>
                     <div className="text-sm text-gray-500">Total Forks</div>
                   </div>
-                  <div className="bg-gray-50 rounded-lg p-4">
+                  <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
                     <div className="text-3xl font-bold text-purple-600">{userReport.summary.openPRs}</div>
                     <div className="text-sm text-gray-500">Open PRs</div>
                   </div>
@@ -231,14 +231,14 @@ const Reports = () => {
 
               {/* Languages */}
               <div>
-                <h3 className="text-lg font-medium text-gray-900 mb-4">Languages</h3>
+                <h3 className="text-lg font-medium text-gray-900 dark:text-gray-300 mb-4">Languages</h3>
                 <div className="flex flex-wrap gap-2">
                   {userReport.languages.slice(0, 10).map((lang) => (
                     <div
                       key={lang.name}
-                      className="px-3 py-1.5 bg-gray-100 rounded-lg flex items-center gap-2"
+                      className="px-3 py-1.5 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center gap-2"
                     >
-                      <span className="font-medium text-gray-900">{lang.name}</span>
+                      <span className="font-medium text-gray-900 dark:text-gray-300">{lang.name}</span>
                       <span className="text-sm text-gray-500">{lang.count} repos</span>
                     </div>
                   ))}
@@ -247,25 +247,25 @@ const Reports = () => {
 
               {/* Top Repos */}
               <div>
-                <h3 className="text-lg font-medium text-gray-900 mb-4">Top Repositories</h3>
+                <h3 className="text-lg font-medium text-gray-900 dark:text-gray-300 mb-4">Top Repositories</h3>
                 <div className="overflow-x-auto">
                   <table className="w-full">
-                    <thead className="bg-gray-50">
+                    <thead className="bg-gray-50 dark:bg-gray-800">
                       <tr>
-                        <th className="text-left px-4 py-2 text-sm font-medium text-gray-700">Repository</th>
-                        <th className="text-left px-4 py-2 text-sm font-medium text-gray-700">Stars</th>
-                        <th className="text-left px-4 py-2 text-sm font-medium text-gray-700">Forks</th>
-                        <th className="text-left px-4 py-2 text-sm font-medium text-gray-700">Language</th>
-                        <th className="text-left px-4 py-2 text-sm font-medium text-gray-700">Updated</th>
+                        <th className="text-left px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300">Repository</th>
+                        <th className="text-left px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300">Stars</th>
+                        <th className="text-left px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300">Forks</th>
+                        <th className="text-left px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300">Language</th>
+                        <th className="text-left px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300">Updated</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
                       {userReport.topRepos.map((repo) => (
-                        <tr key={repo.name} className="hover:bg-gray-50">
+                        <tr key={repo.name} className="hover:bg-gray-50 dark:bg-gray-800">
                           <td className="px-4 py-2 text-sm font-medium text-blue-600">{repo.name}</td>
-                          <td className="px-4 py-2 text-sm text-gray-600">⭐ {repo.stars}</td>
-                          <td className="px-4 py-2 text-sm text-gray-600">🍴 {repo.forks}</td>
-                          <td className="px-4 py-2 text-sm text-gray-600">{repo.language || '-'}</td>
+                          <td className="px-4 py-2 text-sm text-gray-600 dark:text-gray-300">⭐ {repo.stars}</td>
+                          <td className="px-4 py-2 text-sm text-gray-600 dark:text-gray-300">🍴 {repo.forks}</td>
+                          <td className="px-4 py-2 text-sm text-gray-600 dark:text-gray-300">{repo.language || '-'}</td>
                           <td className="px-4 py-2 text-sm text-gray-500">{formatDate(repo.updatedAt)}</td>
                         </tr>
                       ))}
@@ -280,10 +280,10 @@ const Reports = () => {
 
       {/* Weekly Report */}
       {reportType === 'weekly' && (
-        <div className="bg-white rounded-lg shadow">
-          <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
+          <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
             <div>
-              <h2 className="text-lg font-semibold text-gray-900">Weekly Activity Report</h2>
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-300">Weekly Activity Report</h2>
               {weeklyReport && (
                 <p className="text-xs text-gray-500">
                   {formatDate(weeklyReport.period.start)} - {formatDate(weeklyReport.period.end)}
@@ -293,7 +293,7 @@ const Reports = () => {
             <div className="flex gap-2">
               <button
                 onClick={() => refetchWeekly()}
-                className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm"
+                className="px-3 py-1.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:bg-gray-800 text-sm"
               >
                 Refresh
               </button>
@@ -325,7 +325,7 @@ const Reports = () => {
             <div className="p-6 space-y-6">
               {/* Summary Stats */}
               <div>
-                <h3 className="text-lg font-medium text-gray-900 mb-4">This Week's Activity</h3>
+                <h3 className="text-lg font-medium text-gray-900 dark:text-gray-300 mb-4">This Week's Activity</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="bg-blue-50 rounded-lg p-4 text-center">
                     <div className="text-4xl font-bold text-blue-600">{weeklyReport.summary.reposUpdated}</div>
@@ -345,14 +345,14 @@ const Reports = () => {
               {/* Updated Repos */}
               {weeklyReport.updatedRepos.length > 0 && (
                 <div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">Updated Repositories</h3>
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-gray-300 mb-4">Updated Repositories</h3>
                   <div className="space-y-2">
                     {weeklyReport.updatedRepos.map((repo) => (
                       <div
                         key={repo.name}
-                        className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                        className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
                       >
-                        <span className="font-medium text-gray-900">{repo.name}</span>
+                        <span className="font-medium text-gray-900 dark:text-gray-300">{repo.name}</span>
                         <span className="text-sm text-gray-500">{formatDate(repo.updatedAt)}</span>
                       </div>
                     ))}

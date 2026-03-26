@@ -104,7 +104,7 @@ const Organization = () => {
         <svg className="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
         </svg>
-        <h2 className="text-xl font-semibold text-gray-900 mb-2">No Organizations</h2>
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-300 mb-2">No Organizations</h2>
         <p className="text-gray-500">You're not a member of any GitHub organizations yet.</p>
       </div>
     );
@@ -114,14 +114,14 @@ const Organization = () => {
     <div className="space-y-6" data-testid="organization-page">
       {/* Org Selector */}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Organization Dashboard</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-300">Organization Dashboard</h1>
         <select
           value={selectedOrg?.login || ''}
           onChange={(e) => {
             const org = orgs?.find(o => o.login === e.target.value);
             setSelectedOrg(org || null);
           }}
-          className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           data-testid="org-selector"
         >
           {orgs?.map((org) => (
@@ -141,7 +141,7 @@ const Organization = () => {
       {dashboard && (
         <>
           {/* Org Header */}
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
             <div className="flex items-start gap-6">
               <img
                 src={dashboard.details.avatar_url}
@@ -150,7 +150,7 @@ const Organization = () => {
               />
               <div className="flex-1">
                 <div className="flex items-center gap-3">
-                  <h2 className="text-2xl font-bold text-gray-900">
+                  <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-300">
                     {dashboard.details.name || dashboard.details.login}
                   </h2>
                   <a
@@ -163,7 +163,7 @@ const Organization = () => {
                   </a>
                 </div>
                 {dashboard.details.description && (
-                  <p className="mt-2 text-gray-600">{dashboard.details.description}</p>
+                  <p className="mt-2 text-gray-600 dark:text-gray-300">{dashboard.details.description}</p>
                 )}
                 <div className="mt-4 flex flex-wrap gap-4 text-sm text-gray-500">
                   {dashboard.details.location && (
@@ -197,27 +197,27 @@ const Organization = () => {
 
             {/* Stats */}
             <div className="mt-6 grid grid-cols-4 gap-4">
-              <div className="text-center p-4 bg-gray-50 rounded-lg">
-                <div className="text-2xl font-bold text-gray-900">{dashboard.details.public_repos}</div>
+              <div className="text-center p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                <div className="text-2xl font-bold text-gray-900 dark:text-gray-300">{dashboard.details.public_repos}</div>
                 <div className="text-sm text-gray-500">Repositories</div>
               </div>
-              <div className="text-center p-4 bg-gray-50 rounded-lg">
-                <div className="text-2xl font-bold text-gray-900">{dashboard.members.length}</div>
+              <div className="text-center p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                <div className="text-2xl font-bold text-gray-900 dark:text-gray-300">{dashboard.members.length}</div>
                 <div className="text-sm text-gray-500">Members</div>
               </div>
-              <div className="text-center p-4 bg-gray-50 rounded-lg">
-                <div className="text-2xl font-bold text-gray-900">{dashboard.teams.length}</div>
+              <div className="text-center p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                <div className="text-2xl font-bold text-gray-900 dark:text-gray-300">{dashboard.teams.length}</div>
                 <div className="text-sm text-gray-500">Teams</div>
               </div>
-              <div className="text-center p-4 bg-gray-50 rounded-lg">
-                <div className="text-2xl font-bold text-gray-900">{dashboard.details.followers}</div>
+              <div className="text-center p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                <div className="text-2xl font-bold text-gray-900 dark:text-gray-300">{dashboard.details.followers}</div>
                 <div className="text-sm text-gray-500">Followers</div>
               </div>
             </div>
           </div>
 
           {/* Tabs */}
-          <div className="border-b border-gray-200">
+          <div className="border-b border-gray-200 dark:border-gray-700">
             <nav className="flex gap-4">
               {(['overview', 'members', 'teams', 'repos'] as const).map((tab) => (
                 <button
@@ -226,7 +226,7 @@ const Organization = () => {
                   className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px capitalize ${
                     activeTab === tab
                       ? 'border-blue-500 text-blue-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-300'
                   }`}
                 >
                   {tab}
@@ -239,8 +239,8 @@ const Organization = () => {
           {activeTab === 'overview' && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Recent Repos */}
-              <div className="bg-white rounded-lg shadow overflow-hidden">
-                <div className="px-6 py-4 border-b border-gray-200 font-semibold text-gray-900">
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
+                <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 font-semibold text-gray-900 dark:text-gray-300">
                   Recent Repositories
                 </div>
                 <div className="divide-y divide-gray-100">
@@ -250,7 +250,7 @@ const Organization = () => {
                       href={repo.html_url}
                       target="_blank"
                       rel="noreferrer"
-                      className="block px-6 py-4 hover:bg-gray-50"
+                      className="block px-6 py-4 hover:bg-gray-50 dark:bg-gray-800"
                     >
                       <div className="flex items-center justify-between">
                         <div className="font-medium text-blue-600">{repo.name}</div>
@@ -268,8 +268,8 @@ const Organization = () => {
               </div>
 
               {/* Team List */}
-              <div className="bg-white rounded-lg shadow overflow-hidden">
-                <div className="px-6 py-4 border-b border-gray-200 font-semibold text-gray-900">
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
+                <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 font-semibold text-gray-900 dark:text-gray-300">
                   Teams
                 </div>
                 <div className="divide-y divide-gray-100">
@@ -279,9 +279,9 @@ const Organization = () => {
                       href={team.html_url}
                       target="_blank"
                       rel="noreferrer"
-                      className="block px-6 py-4 hover:bg-gray-50"
+                      className="block px-6 py-4 hover:bg-gray-50 dark:bg-gray-800"
                     >
-                      <div className="font-medium text-gray-900">{team.name}</div>
+                      <div className="font-medium text-gray-900 dark:text-gray-300">{team.name}</div>
                       {team.description && (
                         <div className="text-sm text-gray-500 mt-1">{team.description}</div>
                       )}
@@ -296,7 +296,7 @@ const Organization = () => {
           )}
 
           {activeTab === 'members' && (
-            <div className="bg-white rounded-lg shadow overflow-hidden">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-6">
                 {dashboard.members.map((member) => (
                   <a
@@ -304,10 +304,10 @@ const Organization = () => {
                     href={member.html_url}
                     target="_blank"
                     rel="noreferrer"
-                    className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50"
+                    className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 dark:bg-gray-800"
                   >
                     <img src={member.avatar_url} alt={member.login} className="w-10 h-10 rounded-full" />
-                    <span className="font-medium text-gray-900 truncate">{member.login}</span>
+                    <span className="font-medium text-gray-900 dark:text-gray-300 truncate">{member.login}</span>
                   </a>
                 ))}
               </div>
@@ -322,10 +322,10 @@ const Organization = () => {
                   href={team.html_url}
                   target="_blank"
                   rel="noreferrer"
-                  className="bg-white rounded-lg shadow p-6 hover:shadow-md transition-shadow"
+                  className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 hover:shadow-md transition-shadow"
                 >
                   <div className="flex items-center justify-between">
-                    <div className="font-semibold text-gray-900">{team.name}</div>
+                    <div className="font-semibold text-gray-900 dark:text-gray-300">{team.name}</div>
                     <span className={`px-2 py-1 text-xs rounded ${
                       team.privacy === 'secret' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'
                     }`}>
@@ -348,7 +348,7 @@ const Organization = () => {
           {activeTab === 'repos' && (
             <div className="space-y-4">
               {dashboard.repos.map((repo) => (
-                <div key={repo.id} className="bg-white rounded-lg shadow p-6">
+                <div key={repo.id} className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
                   <div className="flex items-start justify-between">
                     <div>
                       <div className="flex items-center gap-2">
@@ -361,11 +361,11 @@ const Organization = () => {
                           {repo.name}
                         </a>
                         {repo.private && (
-                          <span className="px-2 py-0.5 text-xs bg-gray-100 text-gray-600 rounded">Private</span>
+                          <span className="px-2 py-0.5 text-xs bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 rounded">Private</span>
                         )}
                       </div>
                       {repo.description && (
-                        <p className="mt-1 text-gray-600">{repo.description}</p>
+                        <p className="mt-1 text-gray-600 dark:text-gray-300">{repo.description}</p>
                       )}
                       <div className="mt-3 flex items-center gap-4 text-sm text-gray-500">
                         {repo.language && (

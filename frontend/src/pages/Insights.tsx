@@ -128,7 +128,7 @@ const Insights = () => {
   });
 
   const getPunchCardColor = (commits: number) => {
-    if (commits === 0) return 'bg-gray-100';
+    if (commits === 0) return 'bg-gray-100 dark:bg-gray-800';
     const intensity = Math.min(commits / Math.max(maxCommits, 1), 1);
     if (intensity < 0.25) return 'bg-green-200';
     if (intensity < 0.5) return 'bg-green-400';
@@ -147,15 +147,15 @@ const Insights = () => {
   return (
     <div className="space-y-6" data-testid="insights-page">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Repository Insights</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-300">Repository Insights</h1>
       </div>
 
       {/* Repository selector */}
-      <div className="bg-white rounded-lg shadow p-4">
-        <label className="block text-sm font-medium text-gray-700 mb-2">Repository</label>
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Repository</label>
         <select
           data-testid="insights-repo-selector"
-          className="w-full md:w-64 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+          className="w-full md:w-64 px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500"
           value={selectedRepo?.full_name || ''}
           onChange={(e) => {
             const repo = repos?.find(r => r.full_name === e.target.value);
@@ -169,8 +169,8 @@ const Insights = () => {
       </div>
 
       {/* Code Frequency Chart */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Code Frequency</h2>
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-300 mb-4">Code Frequency</h2>
         {codeFreqLoading ? (
           <div className="h-64 flex items-center justify-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
@@ -195,8 +195,8 @@ const Insights = () => {
       </div>
 
       {/* Commit Activity Chart */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Commit Activity (Last Year)</h2>
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-300 mb-4">Commit Activity (Last Year)</h2>
         {commitActivityLoading ? (
           <div className="h-64 flex items-center justify-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
@@ -219,8 +219,8 @@ const Insights = () => {
       </div>
 
       {/* Participation Chart */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Participation (Owner vs All Contributors)</h2>
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-300 mb-4">Participation (Owner vs All Contributors)</h2>
         {participationLoading ? (
           <div className="h-64 flex items-center justify-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
@@ -245,8 +245,8 @@ const Insights = () => {
       </div>
 
       {/* Punch Card Heatmap */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Commit Punch Card</h2>
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-300 mb-4">Commit Punch Card</h2>
         <p className="text-sm text-gray-500 mb-4">Commits by day and hour (darker = more commits)</p>
         {punchCardLoading ? (
           <div className="h-64 flex items-center justify-center">
@@ -279,7 +279,7 @@ const Insights = () => {
               {/* Legend */}
               <div className="flex items-center justify-end mt-4 gap-2">
                 <span className="text-xs text-gray-500">Less</span>
-                <div className="w-4 h-4 bg-gray-100 rounded-sm"></div>
+                <div className="w-4 h-4 bg-gray-100 dark:bg-gray-800 rounded-sm"></div>
                 <div className="w-4 h-4 bg-green-200 rounded-sm"></div>
                 <div className="w-4 h-4 bg-green-400 rounded-sm"></div>
                 <div className="w-4 h-4 bg-green-600 rounded-sm"></div>

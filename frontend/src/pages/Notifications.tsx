@@ -133,7 +133,7 @@ const Notifications = () => {
         );
       default:
         return (
-          <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-5 h-5 text-gray-600 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
           </svg>
         );
@@ -165,7 +165,7 @@ const Notifications = () => {
       case 'assign': return 'bg-green-100 text-green-700';
       case 'security_alert': return 'bg-red-100 text-red-700';
       case 'ci_activity': return 'bg-amber-100 text-amber-700';
-      default: return 'bg-gray-100 text-gray-700';
+      default: return 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300';
     }
   };
 
@@ -214,7 +214,7 @@ const Notifications = () => {
     <div className="space-y-6" data-testid="notifications-page">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-bold text-gray-900">Notifications</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-300">Notifications</h1>
           {unreadCount > 0 && (
             <span className="px-2.5 py-0.5 bg-blue-600 text-white rounded-full text-sm font-medium">
               {unreadCount}
@@ -224,7 +224,7 @@ const Notifications = () => {
         <div className="flex items-center gap-2">
           <button
             onClick={() => refetch()}
-            className="px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+            className="px-3 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:bg-gray-800 transition-colors"
             title="Refresh"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -243,10 +243,10 @@ const Notifications = () => {
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-lg shadow p-4">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
         <div className="flex flex-wrap gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Filter</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Filter</label>
             <div className="flex gap-2">
               {(['unread', 'all', 'participating'] as const).map((f) => (
                 <button
@@ -256,7 +256,7 @@ const Notifications = () => {
                     setSelectedThreadId(null);
                   }}
                   className={`px-3 py-1.5 rounded-lg text-sm font-medium capitalize transition-colors ${
-                    filter === f ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    filter === f ? 'bg-blue-600 text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:bg-gray-800'
                   }`}
                 >
                   {f}
@@ -266,9 +266,9 @@ const Notifications = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Type</label>
             <select
-              className="px-3 py-2 border border-gray-300 rounded-lg"
+              className="px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg"
               value={typeFilter}
               onChange={(e) => {
                 setTypeFilter(e.target.value);
@@ -285,9 +285,9 @@ const Notifications = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Reason</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Reason</label>
             <select
-              className="px-3 py-2 border border-gray-300 rounded-lg"
+              className="px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg"
               value={reasonFilter}
               onChange={(e) => {
                 setReasonFilter(e.target.value);
@@ -305,7 +305,7 @@ const Notifications = () => {
 
       <div className={`grid grid-cols-1 ${selectedThreadId ? 'lg:grid-cols-2' : ''} gap-6`}>
         {/* Notifications List */}
-        <div className="bg-white rounded-lg shadow overflow-hidden">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
           {isLoading ? (
             <div className="p-8 text-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
@@ -315,7 +315,7 @@ const Notifications = () => {
               {filteredNotifications.map((notification) => (
                 <div
                   key={notification.id}
-                  className={`p-4 hover:bg-gray-50 transition-colors cursor-pointer ${
+                  className={`p-4 hover:bg-gray-50 dark:bg-gray-800 transition-colors cursor-pointer ${
                     notification.unread ? 'bg-blue-50/50' : ''
                   } ${selectedThreadId === notification.id ? 'ring-1 ring-blue-300' : ''}`}
                   onClick={() => setSelectedThreadId(notification.id)}
@@ -333,7 +333,7 @@ const Notifications = () => {
                           href={getGitHubUrl(notification)}
                           target="_blank"
                           rel="noreferrer"
-                          className="text-sm font-medium text-gray-900 hover:text-blue-600 truncate"
+                          className="text-sm font-medium text-gray-900 dark:text-gray-300 hover:text-blue-600 truncate"
                           onClick={(e) => e.stopPropagation()}
                         >
                           {notification.subject.title}
@@ -364,7 +364,7 @@ const Notifications = () => {
                         <button
                           onClick={() => markAsReadMutation.mutate(notification.id)}
                           disabled={markAsReadMutation.isPending}
-                          className="p-1.5 text-gray-400 hover:text-gray-600 transition-colors"
+                          className="p-1.5 text-gray-400 hover:text-gray-600 dark:text-gray-300 transition-colors"
                           title="Mark as read"
                         >
                           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -376,7 +376,7 @@ const Notifications = () => {
                         href={getGitHubUrl(notification)}
                         target="_blank"
                         rel="noreferrer"
-                        className="p-1.5 text-gray-400 hover:text-gray-600 transition-colors"
+                        className="p-1.5 text-gray-400 hover:text-gray-600 dark:text-gray-300 transition-colors"
                         title="Open in GitHub"
                       >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -393,7 +393,7 @@ const Notifications = () => {
               <svg className="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
               </svg>
-              <h3 className="text-lg font-medium text-gray-700">No notifications</h3>
+              <h3 className="text-lg font-medium text-gray-700 dark:text-gray-300">No notifications</h3>
               <p className="text-gray-500 mt-1">
                 {filter === 'unread' ? "You're all caught up!" : 'No notifications to show.'}
               </p>
@@ -403,12 +403,12 @@ const Notifications = () => {
 
         {/* Details */}
         {selectedThreadId && (
-          <div className="bg-white rounded-lg shadow overflow-hidden" data-testid="notification-details">
-            <div className="px-4 py-3 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
-              <h2 className="font-semibold text-gray-900">Thread details</h2>
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden" data-testid="notification-details">
+            <div className="px-4 py-3 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+              <h2 className="font-semibold text-gray-900 dark:text-gray-300">Thread details</h2>
               <button
                 onClick={() => setSelectedThreadId(null)}
-                className="p-1 text-gray-400 hover:text-gray-600"
+                className="p-1 text-gray-400 hover:text-gray-600 dark:text-gray-300"
                 title="Close"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -427,28 +427,28 @@ const Notifications = () => {
               <div className="p-4 space-y-3">
                 <div className="text-sm">
                   <span className="text-gray-500">Subject:</span>{' '}
-                  <span className="font-medium text-gray-900">{thread?.subject?.title || '—'}</span>
+                  <span className="font-medium text-gray-900 dark:text-gray-300">{thread?.subject?.title || '—'}</span>
                 </div>
                 <div className="text-sm">
                   <span className="text-gray-500">Type:</span>{' '}
-                  <span className="font-mono text-gray-800">{thread?.subject?.type || '—'}</span>
+                  <span className="font-mono text-gray-800 dark:text-gray-300">{thread?.subject?.type || '—'}</span>
                 </div>
                 <div className="text-sm">
                   <span className="text-gray-500">Updated:</span>{' '}
-                  <span className="text-gray-800">{thread?.updated_at ? new Date(thread.updated_at).toLocaleString() : '—'}</span>
+                  <span className="text-gray-800 dark:text-gray-300">{thread?.updated_at ? new Date(thread.updated_at).toLocaleString() : '—'}</span>
                 </div>
                 <div className="text-sm">
                   <span className="text-gray-500">Reason:</span>{' '}
-                  <span className="font-mono text-gray-800">{thread?.reason || '—'}</span>
+                  <span className="font-mono text-gray-800 dark:text-gray-300">{thread?.reason || '—'}</span>
                 </div>
                 <div className="text-sm">
                   <span className="text-gray-500">Unread:</span>{' '}
-                  <span className="font-medium text-gray-800">{String(thread?.unread ?? '—')}</span>
+                  <span className="font-medium text-gray-800 dark:text-gray-300">{String(thread?.unread ?? '—')}</span>
                 </div>
 
                 <details className="mt-2">
                   <summary className="cursor-pointer text-sm text-blue-600 hover:underline">Raw thread JSON</summary>
-                  <pre className="mt-2 text-xs bg-gray-100 rounded-lg p-3 overflow-auto max-h-96">
+                  <pre className="mt-2 text-xs bg-gray-100 dark:bg-gray-800 rounded-lg p-3 overflow-auto max-h-96">
                     {JSON.stringify(thread, null, 2)}
                   </pre>
                 </details>

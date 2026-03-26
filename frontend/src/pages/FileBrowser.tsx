@@ -132,7 +132,7 @@ const FileBrowser = () => {
   return (
     <div className="space-y-6" data-testid="file-browser-page">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">File Browser</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-300">File Browser</h1>
         <select
           value={selectedRepo?.full_name || ''}
           onChange={(e) => {
@@ -142,7 +142,7 @@ const FileBrowser = () => {
             setSelectedFile(null);
             setSearchParams({ repo: e.target.value, path: '' });
           }}
-          className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           data-testid="repo-selector"
         >
           {repos?.map((repo) => (
@@ -154,7 +154,7 @@ const FileBrowser = () => {
       </div>
 
       {/* Breadcrumb */}
-      <div className="bg-white rounded-lg shadow px-4 py-3">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow px-4 py-3">
         <nav className="flex items-center gap-2 text-sm">
           <button
             onClick={() => navigateTo('')}
@@ -178,8 +178,8 @@ const FileBrowser = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* File List */}
-        <div className="lg:col-span-1 bg-white rounded-lg shadow overflow-hidden">
-          <div className="px-4 py-3 border-b border-gray-200 font-medium text-gray-700">
+        <div className="lg:col-span-1 bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
+          <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 font-medium text-gray-700 dark:text-gray-300">
             Files
           </div>
           {contentsLoading ? (
@@ -191,12 +191,12 @@ const FileBrowser = () => {
               {currentPath && (
                 <button
                   onClick={() => navigateTo(breadcrumbs.slice(0, -1).join('/'))}
-                  className="w-full flex items-center gap-3 px-4 py-2 hover:bg-gray-50 text-left"
+                  className="w-full flex items-center gap-3 px-4 py-2 hover:bg-gray-50 dark:bg-gray-800 text-left"
                 >
                   <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 17l-5-5m0 0l5-5m-5 5h12" />
                   </svg>
-                  <span className="text-gray-600">..</span>
+                  <span className="text-gray-600 dark:text-gray-300">..</span>
                 </button>
               )}
               {contents?.sort((a: FileItem, b: FileItem) => {
@@ -206,7 +206,7 @@ const FileBrowser = () => {
                 <button
                   key={item.sha}
                   onClick={() => handleItemClick(item)}
-                  className={`w-full flex items-center gap-3 px-4 py-2 hover:bg-gray-50 text-left ${
+                  className={`w-full flex items-center gap-3 px-4 py-2 hover:bg-gray-50 dark:bg-gray-800 text-left ${
                     selectedFile?.path === item.path ? 'bg-blue-50' : ''
                   }`}
                 >
@@ -224,11 +224,11 @@ const FileBrowser = () => {
         </div>
 
         {/* File Content */}
-        <div className="lg:col-span-2 bg-white rounded-lg shadow overflow-hidden">
+        <div className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
           {selectedFile ? (
             <>
-              <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
-                <div className="font-medium text-gray-700 truncate">{selectedFile.name}</div>
+              <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+                <div className="font-medium text-gray-700 dark:text-gray-300 truncate">{selectedFile.name}</div>
                 <a
                   href={selectedFile.html_url}
                   target="_blank"
@@ -244,7 +244,7 @@ const FileBrowser = () => {
                 </div>
               ) : fileContent?.decodedContent ? (
                 <div className="overflow-auto max-h-[600px]">
-                  <div className="flex items-center justify-between px-4 py-2 bg-gray-100 border-b border-gray-200 text-xs text-gray-500">
+                  <div className="flex items-center justify-between px-4 py-2 bg-gray-100 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 text-xs text-gray-500">
                     <span className="font-mono">{selectedFile.name}</span>
                     <span className="uppercase tracking-wide font-mono">
                       {getLanguage(selectedFile.name)}
