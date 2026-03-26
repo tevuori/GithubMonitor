@@ -55,7 +55,6 @@ const Dependencies = () => {
   const [expandedEcosystem, setExpandedEcosystem] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Fetch repos
   const { data: repos, isLoading: reposLoading } = useQuery<Repository[]>({
     queryKey: ['repos'],
     queryFn: async () => {
@@ -64,14 +63,12 @@ const Dependencies = () => {
     },
   });
 
-  // Auto-select first repo
   useEffect(() => {
     if (repos && repos.length > 0 && !selectedRepo) {
       setSelectedRepo(repos[0]);
     }
   }, [repos, selectedRepo]);
 
-  // Fetch dependencies
   const { data: dependencies, isLoading: depsLoading } = useQuery<DependencyData>({
     queryKey: ['dependencies', selectedRepo?.owner.login, selectedRepo?.name],
     queryFn: async () => {
@@ -100,17 +97,17 @@ const Dependencies = () => {
   return (
     <div className="space-y-6" data-testid="dependencies-page">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Dependency Graph</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Dependency Graph</h1>
       </div>
 
       {/* Repository selector */}
-      <div className="bg-white rounded-lg shadow p-4">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 border border-gray-200 dark:border-gray-700">
         <div className="flex flex-col md:flex-row gap-4">
           <div className="flex-1">
-            <label className="block text-sm font-medium text-gray-700 mb-2">Repository</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Repository</label>
             <select
               data-testid="deps-repo-selector"
-              className="w-full md:w-64 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full md:w-64 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
               value={selectedRepo?.full_name || ''}
               onChange={(e) => {
                 const repo = repos?.find(r => r.full_name === e.target.value);
@@ -124,13 +121,13 @@ const Dependencies = () => {
             </select>
           </div>
           <div className="flex-1">
-            <label className="block text-sm font-medium text-gray-700 mb-2">Search Dependencies</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Search Dependencies</label>
             <input
               type="text"
               placeholder="Search packages..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
             />
           </div>
         </div>
@@ -139,17 +136,17 @@ const Dependencies = () => {
       {/* Summary Cards */}
       {dependencies && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-white rounded-lg shadow p-4">
-            <div className="text-sm text-gray-500">Total Packages</div>
-            <div className="text-3xl font-bold text-gray-900">{dependencies.packages}</div>
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 border border-gray-200 dark:border-gray-700">
+            <div className="text-sm text-gray-500 dark:text-gray-400">Total Packages</div>
+            <div className="text-3xl font-bold text-gray-900 dark:text-white">{dependencies.packages}</div>
           </div>
-          <div className="bg-white rounded-lg shadow p-4">
-            <div className="text-sm text-gray-500">Ecosystems</div>
-            <div className="text-3xl font-bold text-blue-600">{dependencies.ecosystems?.length || 0}</div>
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 border border-gray-200 dark:border-gray-700">
+            <div className="text-sm text-gray-500 dark:text-gray-400">Ecosystems</div>
+            <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">{dependencies.ecosystems?.length || 0}</div>
           </div>
-          <div className="bg-white rounded-lg shadow p-4">
-            <div className="text-sm text-gray-500">SBOM Generated</div>
-            <div className="text-sm font-medium text-gray-700">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 border border-gray-200 dark:border-gray-700">
+            <div className="text-sm text-gray-500 dark:text-gray-400">SBOM Generated</div>
+            <div className="text-sm font-medium text-gray-700 dark:text-gray-300">
               {dependencies.createdAt ? new Date(dependencies.createdAt).toLocaleDateString() : 'N/A'}
             </div>
           </div>
@@ -157,43 +154,43 @@ const Dependencies = () => {
       )}
 
       {/* Dependencies by Ecosystem */}
-      <div className="bg-white rounded-lg shadow">
-        <div className="px-4 py-3 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">Dependencies by Ecosystem</h2>
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700">
+        <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Dependencies by Ecosystem</h2>
         </div>
         {depsLoading ? (
           <div className="p-8 text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
-            <p className="mt-2 text-gray-500">Loading dependency graph...</p>
+            <p className="mt-2 text-gray-500 dark:text-gray-400">Loading dependency graph...</p>
           </div>
         ) : filteredEcosystems.length > 0 ? (
-          <div className="divide-y divide-gray-100">
+          <div className="divide-y divide-gray-100 dark:divide-gray-700">
             {filteredEcosystems.map((ecosystem) => (
               <div key={ecosystem.name}>
                 <button
                   onClick={() => setExpandedEcosystem(
                     expandedEcosystem === ecosystem.name ? null : ecosystem.name
                   )}
-                  className="w-full px-4 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
+                  className="w-full px-4 py-4 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
                 >
                   <div className="flex items-center gap-3">
                     <span className="text-2xl">{ECOSYSTEM_ICONS[ecosystem.name] || ECOSYSTEM_ICONS.unknown}</span>
                     <div>
-                      <span className="font-medium text-gray-900 capitalize">{ecosystem.name}</span>
-                      <span className="ml-2 text-sm text-gray-500">
+                      <span className="font-medium text-gray-900 dark:text-white capitalize">{ecosystem.name}</span>
+                      <span className="ml-2 text-sm text-gray-500 dark:text-gray-400">
                         ({ecosystem.dependencies.length} packages)
                       </span>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
-                    <div className={`w-24 h-2 rounded-full bg-gray-200 overflow-hidden`}>
+                    <div className="w-24 h-2 rounded-full bg-gray-200 dark:bg-gray-600 overflow-hidden">
                       <div
                         className={`h-full ${ECOSYSTEM_COLORS[ecosystem.name] || ECOSYSTEM_COLORS.unknown}`}
                         style={{ width: `${Math.min(100, (ecosystem.count / (dependencies?.packages || 1)) * 100)}%` }}
                       />
                     </div>
                     <svg
-                      className={`w-5 h-5 text-gray-400 transition-transform ${
+                      className={`w-5 h-5 text-gray-400 dark:text-gray-500 transition-transform ${
                         expandedEcosystem === ecosystem.name ? 'rotate-180' : ''
                       }`}
                       fill="none"
@@ -207,21 +204,21 @@ const Dependencies = () => {
 
                 {expandedEcosystem === ecosystem.name && (
                   <div className="px-4 pb-4">
-                    <div className="bg-gray-50 rounded-lg max-h-96 overflow-y-auto">
+                    <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg max-h-96 overflow-y-auto">
                       <table className="w-full">
-                        <thead className="sticky top-0 bg-gray-100">
+                        <thead className="sticky top-0 bg-gray-100 dark:bg-gray-700">
                           <tr>
-                            <th className="text-left px-4 py-2 text-sm font-medium text-gray-700">Package</th>
-                            <th className="text-left px-4 py-2 text-sm font-medium text-gray-700">Version</th>
-                            <th className="text-left px-4 py-2 text-sm font-medium text-gray-700">License</th>
+                            <th className="text-left px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300">Package</th>
+                            <th className="text-left px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300">Version</th>
+                            <th className="text-left px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300">License</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-200">
+                        <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                           {ecosystem.dependencies.map((dep, idx) => (
-                            <tr key={`${dep.name}-${idx}`} className="hover:bg-gray-100">
-                              <td className="px-4 py-2 text-sm font-mono text-gray-900">{dep.name}</td>
-                              <td className="px-4 py-2 text-sm text-gray-600">{dep.version || '-'}</td>
-                              <td className="px-4 py-2 text-sm text-gray-600">{dep.license || 'Unknown'}</td>
+                            <tr key={`${dep.name}-${idx}`} className="hover:bg-gray-100 dark:hover:bg-gray-700/50">
+                              <td className="px-4 py-2 text-sm font-mono text-gray-900 dark:text-gray-100">{dep.name}</td>
+                              <td className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400">{dep.version || '-'}</td>
+                              <td className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400">{dep.license || 'Unknown'}</td>
                             </tr>
                           ))}
                         </tbody>
@@ -234,14 +231,14 @@ const Dependencies = () => {
           </div>
         ) : (
           <div className="p-8 text-center">
-            <svg className="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
             </svg>
-            <h3 className="text-lg font-medium text-gray-700">No dependencies found</h3>
-            <p className="text-gray-500 mt-1">
+            <h3 className="text-lg font-medium text-gray-700 dark:text-gray-300">No dependencies found</h3>
+            <p className="text-gray-500 dark:text-gray-400 mt-1">
               {searchTerm ? 'No packages match your search.' : 'Dependency graph is not available for this repository.'}
             </p>
-            <p className="text-sm text-gray-400 mt-2">
+            <p className="text-sm text-gray-400 dark:text-gray-500 mt-2">
               Make sure the repository has a supported manifest file (package.json, requirements.txt, etc.)
             </p>
           </div>
@@ -249,7 +246,7 @@ const Dependencies = () => {
       </div>
 
       {/* Info notice */}
-      <div className="bg-blue-50 rounded-lg p-4 text-sm text-blue-700">
+      <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 text-sm text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800">
         <div className="flex items-start gap-2">
           <svg className="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
