@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import api from '../services/api';
 import type { GitGraphData, Commit } from '../types/gitGraph';
@@ -32,6 +33,7 @@ const GitGraph: React.FC<GitGraphProps> = ({ data, owner, repo }) => {
   const [newBranchName, setNewBranchName] = useState('');
   const [newTagName, setNewTagName] = useState('');
 
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
 
   const createBranchMutation = useMutation({
@@ -199,7 +201,6 @@ const GitGraph: React.FC<GitGraphProps> = ({ data, owner, repo }) => {
     }
 
     // Curved connection for branch/merge
-    // Go down a bit, curve horizontally, then continue down
     const curveStartY = y1 + ROW_HEIGHT * 0.4;
     const curveEndY = curveStartY + ROW_HEIGHT * 0.4;
 
@@ -556,14 +557,15 @@ git push --force-with-lease origin ${selectedCommit.branches[0] || '<branch-name
               >
                 View on GitHub
               </a>
-              <a
-                href={`https://github.com/${owner}/${repo}/commit/${selectedCommit.sha}.diff`}
-                target="_blank"
-                rel="noreferrer"
+              <button
+                type="button"
+                onClick={() =>
+                  navigate(`/commits?repo=${encodeURIComponent(`${owner}/${repo}`)}&sha=${selectedCommit.sha}`)
+                }
                 className="px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors"
               >
                 View Diff
-              </a>
+              </button>
               <button
                 onClick={() => setSelectedCommit(null)}
                 className="p-1.5 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
