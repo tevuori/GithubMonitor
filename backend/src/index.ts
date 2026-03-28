@@ -31,6 +31,7 @@ import milestonesRoutes from './routes/milestones';
 import profileRoutes from './routes/profile';
 import reportsRoutes from './routes/reports';
 import envRoutes from './routes/env';
+import backupRoutes from './routes/backup';
 
 // ES Module fix for __dirname
 const __filename = fileURLToPath(import.meta.url);
@@ -235,6 +236,7 @@ app.use('/api/dependencies', dependenciesRoutes);
 app.use('/api/milestones', milestonesRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/reports', reportsRoutes);
+app.use('/api/backup', backupRoutes);
 
 // Start server
 httpServer.listen(PORT, () => {

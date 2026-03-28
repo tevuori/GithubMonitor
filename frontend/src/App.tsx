@@ -27,6 +27,7 @@ import ActivityFeed from './pages/ActivityFeed';
 import Milestones from './pages/Milestones';
 import Profile from './pages/Profile';
 import Reports from './pages/Reports';
+import Backup from './pages/Backup';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 
@@ -98,6 +99,7 @@ function App() {
                   <Route path="milestones" element={<Milestones />} />
                   <Route path="profile" element={<Profile />} />
                   <Route path="reports" element={<Reports />} />
+                  <Route path="backup" element={<Backup />} />
                 </Route>
               </Routes>
             </div>
