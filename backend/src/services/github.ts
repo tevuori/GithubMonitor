@@ -127,6 +127,130 @@ export async function createTagFromCommit(
   return data;
 }
 
+// ==================== BRANCH MANAGEMENT ====================
+
+/**
+ * Rename a branch by creating a new ref at the same SHA and deleting the old one.
+ * GitHub doesn't expose a rename endpoint in REST; this is the standard workaround.
+ */
+export async function renameBranch(
+  accessToken: string,
+  owner: string,
+  repo: string,
+  oldName: string,
+  newName: string,
+) {
+  const octokit = getOctokit(accessToken);
+
+  // 1. Resolve the current SHA of the old branch
+  const { data: refData } = await octokit.git.getRef({ owner, repo, ref: `heads/${oldName}` });
+  const sha = refData.object.sha;
+
+  // 2. Create the new branch at that SHA
+  await octokit.git.createRef({ owner, repo, ref: `refs/heads/${newName}`, sha });
+
+  // 3. Delete the old branch
+  await octokit.git.deleteRef({ owner, repo, ref: `heads/${oldName}` });
+
+  return { renamed: true, from: oldName, to: newName, sha };
+}
+
+/**
+ * Set the default branch of a repository.
+ */
+export async function setDefaultBranch(
+  accessToken: string,
+  owner: string,
+  repo: string,
+  branch: string,
+) {
+  const octokit = getOctokit(accessToken);
+  const { data } = await octokit.repos.update({ owner, repo, default_branch: branch });
+  return { default_branch: data.default_branch };
+}
+
+/**
+ * Squash-merge a source branch into a target branch.
+ * This creates a PR under the hood (or uses the merge API with squash strategy).
+ * We use the merge endpoint which accepts merge_method: 'squash'.
+ *
+ * Requires the source branch to be ahead of target.
+ */
+export async function squashMergeBranch(
+  accessToken: string,
+  owner: string,
+  repo: string,
+  head: string,      // source branch (the one to squash-merge FROM)
+  base: string,      // target branch (the one to merge INTO)
+  commitTitle?: string,
+  commitMessage?: string,
+) {
+  const octokit = getOctokit(accessToken);
+
+  // Create a temporary PR so we can use the merge API with squash strategy
+  const { data: pr } = await octokit.pulls.create({
+    owner,
+    repo,
+    head,
+    base,
+    title: commitTitle || `Squash merge ${head} into ${base}`,
+    body: commitMessage || `Automated squash merge of \`${head}\` into \`${base}\``,
+  });
+
+  try {
+    const { data: mergeResult } = await octokit.pulls.merge({
+      owner,
+      repo,
+      pull_number: pr.number,
+      merge_method: 'squash',
+      commit_title: commitTitle || `Squash merge ${head} into ${base}`,
+      commit_message: commitMessage || '',
+    });
+    return { merged: mergeResult.merged, sha: mergeResult.sha, message: mergeResult.message, pr_number: pr.number };
+  } catch (err) {
+    // Attempt to close the PR if merge fails
+    await octokit.pulls.update({ owner, repo, pull_number: pr.number, state: 'closed' }).catch(() => {});
+    throw err;
+  }
+}
+
+/**
+ * Rebase-merge a source branch into a target branch.
+ * Uses the PR merge API with rebase strategy.
+ */
+export async function rebaseMergeBranch(
+  accessToken: string,
+  owner: string,
+  repo: string,
+  head: string,      // source branch
+  base: string,      // target branch
+) {
+  const octokit = getOctokit(accessToken);
+
+  // Create a temporary PR
+  const { data: pr } = await octokit.pulls.create({
+    owner,
+    repo,
+    head,
+    base,
+    title: `Rebase merge ${head} into ${base}`,
+    body: `Automated rebase merge of \`${head}\` into \`${base}\``,
+  });
+
+  try {
+    const { data: mergeResult } = await octokit.pulls.merge({
+      owner,
+      repo,
+      pull_number: pr.number,
+      merge_method: 'rebase',
+    });
+    return { merged: mergeResult.merged, sha: mergeResult.sha, message: mergeResult.message, pr_number: pr.number };
+  } catch (err) {
+    await octokit.pulls.update({ owner, repo, pull_number: pr.number, state: 'closed' }).catch(() => {});
+    throw err;
+  }
+}
+
 // ==================== PR REVIEW FEATURES ====================
 
 export async function getPullRequest(accessToken: string, owner: string, repo: string, pullNumber: number) {

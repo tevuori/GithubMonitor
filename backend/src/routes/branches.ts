@@ -1,11 +1,29 @@
 import { Router, Request, Response } from 'express';
-import { getRepoBranches, getGitGraph, deleteBranch, getDefaultBranch, createBranchFromCommit, createTagFromCommit } from '../services/github';
+import {
+  getRepoBranches,
+  getGitGraph,
+  deleteBranch,
+  getDefaultBranch,
+  createBranchFromCommit,
+  createTagFromCommit,
+  renameBranch,
+  setDefaultBranch,
+  squashMergeBranch,
+  rebaseMergeBranch,
+} from '../services/github';
 
 const router = Router();
 const requireAuth = (req: Request, res: Response, next: any) => {
   if (!req.isAuthenticated()) return res.status(401).json({ error: 'Not authenticated' });
   next();
 };
+
+// Validate branch name helper
+function isValidBranchName(name: string): boolean {
+  if (!name || typeof name !== 'string' || name.trim() === '') return false;
+  if (name.includes(' ') || name.includes('~') || name.includes('^') || name.includes('..') || name.endsWith('/')) return false;
+  return true;
+}
 
 // List all branches for a repo
 router.get('/:owner/:repo', requireAuth, async (req: Request, res: Response) => {
@@ -33,12 +51,7 @@ router.post('/:owner/:repo', requireAuth, async (req: Request, res: Response) =>
       return res.status(400).json({ error: 'name and fromSha are required' });
     }
 
-    if (typeof name !== 'string' || name.trim() === '') {
-      return res.status(400).json({ error: 'Branch name must be a non-empty string' });
-    }
-
-    // Basic guard against obviously invalid names
-    if (name.includes(' ') || name.includes('~') || name.includes('^') || name.includes('..') || name.endsWith('/')) {
+    if (!isValidBranchName(name)) {
       return res.status(400).json({ error: 'Branch name contains invalid characters' });
     }
 
@@ -47,6 +60,114 @@ router.post('/:owner/:repo', requireAuth, async (req: Request, res: Response) =>
   } catch (err: any) {
     console.error('Create branch error:', err);
     res.status(err.status || 500).json({ error: err.message || 'Failed to create branch' });
+  }
+});
+
+// Rename a branch
+router.post('/:owner/:repo/:branch/rename', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const user = req.user as any;
+    const owner = String(req.params.owner);
+    const repo = String(req.params.repo);
+    const oldName = String(req.params.branch);
+    const { newName } = req.body as { newName?: string };
+
+    if (!newName) {
+      return res.status(400).json({ error: 'newName is required' });
+    }
+
+    if (!isValidBranchName(newName)) {
+      return res.status(400).json({ error: 'New branch name contains invalid characters' });
+    }
+
+    if (oldName === newName) {
+      return res.status(400).json({ error: 'New name must differ from current name' });
+    }
+
+    // Prevent renaming the default branch (safety guard)
+    const defaultBranch = await getDefaultBranch(user.accessToken, owner, repo);
+    if (oldName === defaultBranch) {
+      return res.status(400).json({ error: 'Cannot rename the default branch via this endpoint. Change the default branch first.' });
+    }
+
+    const result = await renameBranch(user.accessToken, owner, repo, oldName, newName);
+    res.json(result);
+  } catch (err: any) {
+    console.error('Rename branch error:', err);
+    res.status(err.status || 500).json({ error: err.message || 'Failed to rename branch' });
+  }
+});
+
+// Set default branch
+router.patch('/:owner/:repo/default', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const user = req.user as any;
+    const owner = String(req.params.owner);
+    const repo = String(req.params.repo);
+    const { branch } = req.body as { branch?: string };
+
+    if (!branch) {
+      return res.status(400).json({ error: 'branch is required' });
+    }
+
+    const result = await setDefaultBranch(user.accessToken, owner, repo, branch);
+    res.json(result);
+  } catch (err: any) {
+    console.error('Set default branch error:', err);
+    res.status(err.status || 500).json({ error: err.message || 'Failed to set default branch' });
+  }
+});
+
+// Squash-merge a branch into a target branch
+router.post('/:owner/:repo/squash-merge', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const user = req.user as any;
+    const owner = String(req.params.owner);
+    const repo = String(req.params.repo);
+    const { head, base, commitTitle, commitMessage } = req.body as {
+      head?: string;
+      base?: string;
+      commitTitle?: string;
+      commitMessage?: string;
+    };
+
+    if (!head || !base) {
+      return res.status(400).json({ error: 'head and base branch names are required' });
+    }
+
+    if (head === base) {
+      return res.status(400).json({ error: 'head and base must be different branches' });
+    }
+
+    const result = await squashMergeBranch(user.accessToken, owner, repo, head, base, commitTitle, commitMessage);
+    res.json(result);
+  } catch (err: any) {
+    console.error('Squash merge error:', err);
+    res.status(err.status || 500).json({ error: err.message || 'Failed to squash merge branch' });
+  }
+});
+
+// Rebase-merge a branch into a target branch
+router.post('/:owner/:repo/rebase-merge', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const user = req.user as any;
+    const owner = String(req.params.owner);
+    const repo = String(req.params.repo);
+    const { head, base } = req.body as { head?: string; base?: string };
+
+    if (!head || !base) {
+      return res.status(400).json({ error: 'head and base branch names are required' });
+    }
+
+    if (head === base) {
+      return res.status(400).json({ error: 'head and base must be different branches' });
+    }
+
+    const result = await rebaseMergeBranch(user.accessToken, owner, repo, head, base);
+    res.json(result);
+  } catch (err: any) {
+    console.error('Rebase merge error:', err);
+    res.status(err.status || 500).json({ error: err.message || 'Failed to rebase merge branch' });
   }
 });
 
@@ -62,11 +183,7 @@ router.post('/:owner/:repo/tag', requireAuth, async (req: Request, res: Response
       return res.status(400).json({ error: 'name and fromSha are required' });
     }
 
-    if (typeof name !== 'string' || name.trim() === '') {
-      return res.status(400).json({ error: 'Tag name must be a non-empty string' });
-    }
-
-    if (name.includes(' ') || name.includes('~') || name.includes('^') || name.includes('..') || name.endsWith('/')) {
+    if (!isValidBranchName(name)) {
       return res.status(400).json({ error: 'Tag name contains invalid characters' });
     }
 
@@ -93,8 +210,6 @@ router.get('/:owner/:repo/graph', requireAuth, async (req: Request, res: Respons
 });
 
 // Delete a branch
-// Safety: the route itself does not prevent deletion of the default branch;
-// the frontend enforces that guard, but we double-check here too.
 router.delete('/:owner/:repo/:branch', requireAuth, async (req: Request, res: Response) => {
   try {
     const user = req.user as any;
