@@ -13,7 +13,7 @@ interface GitGraphProps {
   repo: string;
 }
 
-// Color palette for branches
+// Color palette for branches (indexed by lane)
 const BRANCH_COLORS = [
   '#3b82f6', // blue
   '#22c55e', // green
@@ -27,8 +27,8 @@ const BRANCH_COLORS = [
   '#6366f1', // indigo
 ];
 
-// Special color for default branch (unique and always reserved)
-const DEFAULT_BRANCH_COLOR = '#8b5cf6'; // distinct violet for the main branch
+// Special color for default branch (distinct from palette)
+const DEFAULT_BRANCH_COLOR = '#8b5cf6';
 
 const GitGraph: React.FC<GitGraphProps> = ({ data, owner, repo }) => {
   const [selectedCommit, setSelectedCommit] = useState<Commit | null>(null);
@@ -75,7 +75,7 @@ const GitGraph: React.FC<GitGraphProps> = ({ data, owner, repo }) => {
   const LANE_WIDTH = 24;
   const LEFT_PADDING = 16;
 
-  // Build graph layout using a simpler, more robust algorithm
+  // Build graph layout using backend-provided branch lanes
   const { commitPositions, edges, maxLane } = useMemo(() => {
     const positions = new Map<string, { row: number; lane: number; color: string }>();
     const edges: Array<{
@@ -92,109 +92,54 @@ const GitGraph: React.FC<GitGraphProps> = ({ data, owner, repo }) => {
       return { commitPositions: positions, edges, maxLane: 0 };
     }
 
-    // Create index for quick parent lookup
+    // Index commits by SHA for quick parent lookup
     const commitIndex = new Map<string, number>();
     data.commits.forEach((c, i) => commitIndex.set(c.sha, i));
 
-    // Determine default branch name (if any)
-    const defaultBranch = data.branches.find((b) => b.isDefault);
-    const defaultBranchName = defaultBranch?.name;
+    // Map branch name -> lane using backend-provided layout
+    const branchLane = new Map<string, number>();
+    data.branches.forEach((branch) => {
+      const laneFromMap = data.branchLanes?.[branch.name];
+      const lane = typeof laneFromMap === 'number' ? laneFromMap : branch.lane;
+      if (typeof lane === 'number') {
+        branchLane.set(branch.name, lane);
+      }
+    });
 
-    // Track active lanes (which SHA currently "owns" each lane)
-    const activeLanes: (string | null)[] = [];
+    const defaultBranchName = data.defaultBranch || data.branches.find((b) => b.isDefault)?.name;
 
-    // Helper to find first available lane
-    const findFreeLane = (): number => {
-      const idx = activeLanes.indexOf(null);
-      if (idx !== -1) return idx;
-      activeLanes.push(null);
-      return activeLanes.length - 1;
+    const getBranchLane = (name: string): number | undefined => branchLane.get(name);
+
+    const getCommitLane = (commit: Commit): number => {
+      if (!commit.branches || commit.branches.length === 0) return 0;
+      let bestLane: number | undefined;
+      for (const name of commit.branches) {
+        const lane = getBranchLane(name);
+        if (lane === undefined) continue;
+        if (bestLane === undefined || lane < bestLane) bestLane = lane;
+      }
+      return bestLane ?? 0;
     };
 
-    // Helper to get color for a commit
-    const getCommitColor = (commit: Commit): string => {
-      // Always prefer the default branch color when the commit belongs to it
+    const getCommitColor = (commit: Commit, lane: number): string => {
       if (defaultBranchName && commit.branches?.includes(defaultBranchName)) {
         return DEFAULT_BRANCH_COLOR;
       }
-
-      const primaryBranch = commit.branches?.[0];
-      if (primaryBranch) {
-        const branchIdx = data.branches.findIndex((b) => b.name === primaryBranch);
-        if (branchIdx >= 0) {
-          return BRANCH_COLORS[branchIdx % BRANCH_COLORS.length];
-        }
-      }
-      return BRANCH_COLORS[0];
+      return BRANCH_COLORS[Math.abs(lane) % BRANCH_COLORS.length];
     };
 
-    // Process commits top to bottom (newest first)
     data.commits.forEach((commit, row) => {
-      const color = getCommitColor(commit);
-      const isOnDefaultBranch = defaultBranchName
-        ? commit.branches.includes(defaultBranchName)
-        : false;
-      let lane: number;
+      const lane = getCommitLane(commit);
+      const color = getCommitColor(commit, lane);
 
-      if (isOnDefaultBranch && defaultBranchName) {
-        // Pin commits that belong to the default branch to lane 0
-        if (activeLanes.length === 0) {
-          activeLanes.push(null);
-        }
-        lane = 0;
-      } else {
-        // Check if a child already reserved a lane for this commit
-        const reservedLane = activeLanes.indexOf(commit.sha);
-        if (reservedLane !== -1) {
-          lane = reservedLane;
-        } else {
-          lane = findFreeLane();
-        }
-      }
-
-      // Place this commit
-      activeLanes[lane] = commit.sha;
       positions.set(commit.sha, { row, lane, color });
 
-      // Process parents
       const validParents = commit.parents.filter((psha) => commitIndex.has(psha));
-
-      validParents.forEach((parentSha, pIdx) => {
+      validParents.forEach((parentSha) => {
         const parentRow = commitIndex.get(parentSha)!;
         const parentCommit = data.commits[parentRow];
-        const parentOnDefaultBranch = defaultBranchName
-          ? parentCommit.branches.includes(defaultBranchName)
-          : false;
-        let parentLane: number;
+        const parentLane = getCommitLane(parentCommit);
 
-        // Check if parent already has a position (from another child)
-        const existingParentPos = positions.get(parentSha);
-        if (existingParentPos) {
-          parentLane = existingParentPos.lane;
-        } else if (parentOnDefaultBranch && defaultBranchName) {
-          // Ensure parents on the default branch also stay on lane 0
-          if (activeLanes.length === 0) {
-            activeLanes.push(null);
-          }
-          parentLane = 0;
-          activeLanes[0] = parentSha;
-        } else {
-          // Check if parent is already reserved in a lane
-          const reservedParentLane = activeLanes.indexOf(parentSha);
-          if (reservedParentLane !== -1) {
-            parentLane = reservedParentLane;
-          } else if (pIdx === 0) {
-            // First parent continues in the same lane
-            parentLane = lane;
-            activeLanes[lane] = parentSha;
-          } else {
-            // Secondary parents get a new lane
-            parentLane = findFreeLane();
-            activeLanes[parentLane] = parentSha;
-          }
-        }
-
-        // Add edge
         edges.push({
           fromSha: commit.sha,
           toSha: parentSha,
@@ -205,23 +150,18 @@ const GitGraph: React.FC<GitGraphProps> = ({ data, owner, repo }) => {
           color,
         });
       });
-
-      // Free up lane if this commit has no parents (root commit)
-      if (validParents.length === 0) {
-        activeLanes[lane] = null;
-      }
     });
 
     const maxLane = Math.max(0, ...Array.from(positions.values()).map((p) => p.lane));
     return { commitPositions: positions, edges, maxLane };
-  }, [data.commits, data.branches]);
+  }, [data.commits, data.branches, data.branchLanes, data.defaultBranch]);
 
   const svgWidth = Math.max(120, (maxLane + 2) * LANE_WIDTH + LEFT_PADDING * 2);
 
   const getX = (lane: number) => LEFT_PADDING + lane * LANE_WIDTH + LANE_WIDTH / 2;
   const getY = (row: number) => row * ROW_HEIGHT + ROW_HEIGHT / 2 + 20;
-  const getColor = (branchIndex: number, isDefault: boolean = false) =>
-    isDefault ? DEFAULT_BRANCH_COLOR : BRANCH_COLORS[branchIndex % BRANCH_COLORS.length];
+  const getColor = (laneIndex: number, isDefault: boolean = false) =>
+    isDefault ? DEFAULT_BRANCH_COLOR : BRANCH_COLORS[Math.abs(laneIndex) % BRANCH_COLORS.length];
 
   // Generate SVG path for an edge
   const renderEdgePath = (edge: (typeof edges)[0]) => {
@@ -274,11 +214,11 @@ const GitGraph: React.FC<GitGraphProps> = ({ data, owner, repo }) => {
     <div className="flex flex-col h-full bg-white dark:bg-gray-900">
       {/* Branch Legend */}
       <div className="flex flex-wrap gap-3 p-4 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700/50">
-        {data.branches.map((branch, i) => (
+        {data.branches.map((branch) => (
           <div key={branch.name} className="flex items-center gap-2">
             <div
               className="w-3 h-3 rounded-full"
-              style={{ backgroundColor: getColor(i, branch.isDefault) }}
+              style={{ backgroundColor: getColor(branch.lane, branch.isDefault) }}
             />
             <span className="text-sm text-gray-700 dark:text-gray-300 font-mono">
               {branch.name}
@@ -449,8 +389,8 @@ const GitGraph: React.FC<GitGraphProps> = ({ data, owner, repo }) => {
                   <div className="flex items-center gap-1.5 flex-shrink-0">
                     {commit.branches.slice(0, 2).map((branch) => {
                       const branchObj = data.branches.find((b) => b.name === branch);
-                      const branchIdx = data.branches.findIndex((b) => b.name === branch);
-                      const color = branchObj ? getColor(branchIdx, branchObj.isDefault) : getColor(0, false);
+                      const laneIndex = branchObj?.lane ?? 0;
+                      const color = branchObj ? getColor(laneIndex, branchObj.isDefault) : getColor(0, false);
                       return (
                         <span
                           key={branch}
@@ -519,8 +459,8 @@ const GitGraph: React.FC<GitGraphProps> = ({ data, owner, repo }) => {
                 <div className="flex items-center gap-1 flex-wrap">
                   {selectedCommit.branches.map((branch) => {
                     const branchObj = data.branches.find((b) => b.name === branch);
-                    const branchIdx = data.branches.findIndex((b) => b.name === branch);
-                    const color = branchObj ? getColor(branchIdx, branchObj.isDefault) : getColor(0, false);
+                    const laneIndex = branchObj?.lane ?? 0;
+                    const color = branchObj ? getColor(laneIndex, branchObj.isDefault) : getColor(0, false);
                     return (
                       <span
                         key={branch}
