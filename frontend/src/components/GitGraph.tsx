@@ -27,6 +27,9 @@ const BRANCH_COLORS = [
   '#6366f1', // indigo
 ];
 
+// Special color for default branch
+const DEFAULT_BRANCH_COLOR = '#8b5cf6'; // violet - distinct and visible
+
 const GitGraph: React.FC<GitGraphProps> = ({ data, owner, repo }) => {
   const [selectedCommit, setSelectedCommit] = useState<Commit | null>(null);
   const [hoveredCommit, setHoveredCommit] = useState<string | null>(null);
@@ -108,9 +111,16 @@ const GitGraph: React.FC<GitGraphProps> = ({ data, owner, repo }) => {
     const getCommitColor = (commit: Commit): string => {
       const primaryBranch = commit.branches?.[0];
       if (primaryBranch) {
-        const branchIdx = data.branches.findIndex(b => b.name === primaryBranch);
-        if (branchIdx >= 0) {
-          return BRANCH_COLORS[branchIdx % BRANCH_COLORS.length];
+        const branch = data.branches.find(b => b.name === primaryBranch);
+        if (branch) {
+          // Use special color for default branch
+          if (branch.isDefault) {
+            return DEFAULT_BRANCH_COLOR;
+          }
+          const branchIdx = data.branches.findIndex(b => b.name === primaryBranch);
+          if (branchIdx >= 0) {
+            return BRANCH_COLORS[branchIdx % BRANCH_COLORS.length];
+          }
         }
       }
       return BRANCH_COLORS[0];
@@ -186,7 +196,8 @@ const GitGraph: React.FC<GitGraphProps> = ({ data, owner, repo }) => {
 
   const getX = (lane: number) => LEFT_PADDING + lane * LANE_WIDTH + LANE_WIDTH / 2;
   const getY = (row: number) => row * ROW_HEIGHT + ROW_HEIGHT / 2 + 20;
-  const getColor = (branchIndex: number) => BRANCH_COLORS[branchIndex % BRANCH_COLORS.length];
+  const getColor = (branchIndex: number, isDefault: boolean = false) =>
+    isDefault ? DEFAULT_BRANCH_COLOR : BRANCH_COLORS[branchIndex % BRANCH_COLORS.length];
 
   // Generate SVG path for an edge
   const renderEdgePath = (edge: typeof edges[0]) => {
@@ -239,10 +250,15 @@ const GitGraph: React.FC<GitGraphProps> = ({ data, owner, repo }) => {
           <div key={branch.name} className="flex items-center gap-2">
             <div
               className="w-3 h-3 rounded-full"
-              style={{ backgroundColor: getColor(i) }}
+              style={{ backgroundColor: getColor(i, branch.isDefault) }}
             />
             <span className="text-sm text-gray-700 dark:text-gray-300 font-mono">
               {branch.name}
+              {branch.isDefault && (
+                <span className="ml-1.5 px-1.5 py-0.5 text-xs bg-purple-100 dark:bg-purple-500/20 text-purple-700 dark:text-purple-400 rounded">
+                  default
+                </span>
+              )}
               {branch.protected && (
                 <span className="ml-1.5 px-1.5 py-0.5 text-xs bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 rounded">
                   protected
@@ -292,6 +308,10 @@ const GitGraph: React.FC<GitGraphProps> = ({ data, owner, repo }) => {
               const x = getX(pos.lane);
               const y = getY(pos.row);
               const isHead = data.branches.some((b) => b.headSha === commit.sha);
+              const isOnDefaultBranch = commit.branches.some(branchName => {
+                const branch = data.branches.find(b => b.name === branchName);
+                return branch?.isDefault;
+              });
               const isHovered = hoveredCommit === commit.sha;
               const isSelected = selectedCommit?.sha === commit.sha;
 
@@ -304,6 +324,18 @@ const GitGraph: React.FC<GitGraphProps> = ({ data, owner, repo }) => {
                       r={NODE_RADIUS + 4}
                       fill={pos.color}
                       opacity="0.3"
+                    />
+                  )}
+                  {/* Special ring for commits on default branch */}
+                  {isOnDefaultBranch && !isHead && (
+                    <circle
+                      cx={x}
+                      cy={y}
+                      r={NODE_RADIUS + 3}
+                      fill="none"
+                      stroke={DEFAULT_BRANCH_COLOR}
+                      strokeWidth="2"
+                      strokeOpacity="0.5"
                     />
                   )}
                   <circle
@@ -332,6 +364,10 @@ const GitGraph: React.FC<GitGraphProps> = ({ data, owner, repo }) => {
               const isSelected = selectedCommit?.sha === commit.sha;
               const isHovered = hoveredCommit === commit.sha;
               const isHead = data.branches.some((b) => b.headSha === commit.sha);
+              const isOnDefaultBranch = commit.branches.some(branchName => {
+                const branch = data.branches.find(b => b.name === branchName);
+                return branch?.isDefault;
+              });
 
               return (
                 <div
@@ -367,6 +403,11 @@ const GitGraph: React.FC<GitGraphProps> = ({ data, owner, repo }) => {
                           HEAD
                         </span>
                       )}
+                      {isOnDefaultBranch && !isHead && (
+                        <span className="px-1.5 py-0.5 text-xs bg-purple-100 dark:bg-purple-500/20 text-purple-700 dark:text-purple-400 rounded flex-shrink-0">
+                          default
+                        </span>
+                      )}
                     </div>
                     <div className="flex items-center gap-2 text-xs text-gray-500 mt-0.5">
                       <span className="font-mono text-blue-600 dark:text-blue-400">{commit.shortSha}</span>
@@ -379,8 +420,9 @@ const GitGraph: React.FC<GitGraphProps> = ({ data, owner, repo }) => {
 
                   <div className="flex items-center gap-1.5 flex-shrink-0">
                     {commit.branches.slice(0, 2).map((branch) => {
+                      const branchObj = data.branches.find(b => b.name === branch);
                       const branchIdx = data.branches.findIndex(b => b.name === branch);
-                      const color = branchIdx >= 0 ? getColor(branchIdx) : getColor(0);
+                      const color = branchObj ? getColor(branchIdx, branchObj.isDefault) : getColor(0, false);
                       return (
                         <span
                           key={branch}
@@ -448,8 +490,9 @@ const GitGraph: React.FC<GitGraphProps> = ({ data, owner, repo }) => {
                 </span>
                 <div className="flex items-center gap-1 flex-wrap">
                   {selectedCommit.branches.map((branch) => {
+                    const branchObj = data.branches.find(b => b.name === branch);
                     const branchIdx = data.branches.findIndex(b => b.name === branch);
-                    const color = branchIdx >= 0 ? getColor(branchIdx) : getColor(0);
+                    const color = branchObj ? getColor(branchIdx, branchObj.isDefault) : getColor(0, false);
                     return (
                       <span
                         key={branch}

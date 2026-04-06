@@ -20,6 +20,7 @@ export interface Branch {
   protected: boolean;
   headSha: string;
   lane: number;
+  isDefault: boolean;
 }
 
 export interface GitGraphData {
@@ -27,4 +28,5 @@ export interface GitGraphData {
   commits: Commit[];
   branchLanes: Record<string, number>;
   totalCommits: number;
+  defaultBranch: string;
 }

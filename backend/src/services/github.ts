@@ -391,9 +391,13 @@ export async function getOrgRepos(accessToken: string, org: string) {
 
 export async function getGitGraph(accessToken: string, owner: string, repo: string, perPage: number = 100) {
   const octokit = getOctokit(accessToken);
-  
-  // Fetch all branches
-  const { data: branches } = await octokit.repos.listBranches({ owner, repo, per_page: 100 });
+
+  // Fetch all branches and default branch
+  const [{ data: branches }, { data: repoInfo }] = await Promise.all([
+    octokit.repos.listBranches({ owner, repo, per_page: 100 }),
+    octokit.repos.get({ owner, repo }),
+  ]);
+  const defaultBranch = repoInfo.default_branch;
   
   // Fetch commits for each branch with parent info
   const branchCommits = await Promise.all(
@@ -468,10 +472,12 @@ export async function getGitGraph(accessToken: string, owner: string, repo: stri
       protected: b.protected,
       headSha: branchHeads.get(b.name) || '',
       lane: branchLanes[b.name],
+      isDefault: b.name === defaultBranch,
     })),
     commits: allCommits,
     branchLanes,
     totalCommits: allCommits.length,
+    defaultBranch,
   };
 }
 
