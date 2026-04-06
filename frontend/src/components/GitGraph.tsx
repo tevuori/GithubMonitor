@@ -19,7 +19,7 @@ const BRANCH_COLORS = [
   '#22c55e', // green
   '#f59e0b', // amber
   '#ec4899', // pink
-  '#8b5cf6', // violet
+  '#a855f7', // violet (non-default)
   '#06b6d4', // cyan
   '#f97316', // orange
   '#14b8a6', // teal
@@ -27,8 +27,8 @@ const BRANCH_COLORS = [
   '#6366f1', // indigo
 ];
 
-// Special color for default branch
-const DEFAULT_BRANCH_COLOR = '#8b5cf6'; // violet - distinct and visible
+// Special color for default branch (unique and always reserved)
+const DEFAULT_BRANCH_COLOR = '#8b5cf6'; // distinct violet for the main branch
 
 const GitGraph: React.FC<GitGraphProps> = ({ data, owner, repo }) => {
   const [selectedCommit, setSelectedCommit] = useState<Commit | null>(null);
@@ -96,6 +96,10 @@ const GitGraph: React.FC<GitGraphProps> = ({ data, owner, repo }) => {
     const commitIndex = new Map<string, number>();
     data.commits.forEach((c, i) => commitIndex.set(c.sha, i));
 
+    // Determine default branch name (if any)
+    const defaultBranch = data.branches.find((b) => b.isDefault);
+    const defaultBranchName = defaultBranch?.name;
+
     // Track active lanes (which SHA currently "owns" each lane)
     const activeLanes: (string | null)[] = [];
 
@@ -109,18 +113,16 @@ const GitGraph: React.FC<GitGraphProps> = ({ data, owner, repo }) => {
 
     // Helper to get color for a commit
     const getCommitColor = (commit: Commit): string => {
+      // Always prefer the default branch color when the commit belongs to it
+      if (defaultBranchName && commit.branches?.includes(defaultBranchName)) {
+        return DEFAULT_BRANCH_COLOR;
+      }
+
       const primaryBranch = commit.branches?.[0];
       if (primaryBranch) {
-        const branch = data.branches.find(b => b.name === primaryBranch);
-        if (branch) {
-          // Use special color for default branch
-          if (branch.isDefault) {
-            return DEFAULT_BRANCH_COLOR;
-          }
-          const branchIdx = data.branches.findIndex(b => b.name === primaryBranch);
-          if (branchIdx >= 0) {
-            return BRANCH_COLORS[branchIdx % BRANCH_COLORS.length];
-          }
+        const branchIdx = data.branches.findIndex((b) => b.name === primaryBranch);
+        if (branchIdx >= 0) {
+          return BRANCH_COLORS[branchIdx % BRANCH_COLORS.length];
         }
       }
       return BRANCH_COLORS[0];
@@ -128,15 +130,26 @@ const GitGraph: React.FC<GitGraphProps> = ({ data, owner, repo }) => {
 
     // Process commits top to bottom (newest first)
     data.commits.forEach((commit, row) => {
-      let lane: number;
       const color = getCommitColor(commit);
+      const isOnDefaultBranch = defaultBranchName
+        ? commit.branches.includes(defaultBranchName)
+        : false;
+      let lane: number;
 
-      // Check if a child already reserved a lane for this commit
-      const reservedLane = activeLanes.indexOf(commit.sha);
-      if (reservedLane !== -1) {
-        lane = reservedLane;
+      if (isOnDefaultBranch && defaultBranchName) {
+        // Pin commits that belong to the default branch to lane 0
+        if (activeLanes.length === 0) {
+          activeLanes.push(null);
+        }
+        lane = 0;
       } else {
-        lane = findFreeLane();
+        // Check if a child already reserved a lane for this commit
+        const reservedLane = activeLanes.indexOf(commit.sha);
+        if (reservedLane !== -1) {
+          lane = reservedLane;
+        } else {
+          lane = findFreeLane();
+        }
       }
 
       // Place this commit
@@ -144,16 +157,27 @@ const GitGraph: React.FC<GitGraphProps> = ({ data, owner, repo }) => {
       positions.set(commit.sha, { row, lane, color });
 
       // Process parents
-      const validParents = commit.parents.filter(psha => commitIndex.has(psha));
-      
+      const validParents = commit.parents.filter((psha) => commitIndex.has(psha));
+
       validParents.forEach((parentSha, pIdx) => {
         const parentRow = commitIndex.get(parentSha)!;
+        const parentCommit = data.commits[parentRow];
+        const parentOnDefaultBranch = defaultBranchName
+          ? parentCommit.branches.includes(defaultBranchName)
+          : false;
         let parentLane: number;
 
         // Check if parent already has a position (from another child)
         const existingParentPos = positions.get(parentSha);
         if (existingParentPos) {
           parentLane = existingParentPos.lane;
+        } else if (parentOnDefaultBranch && defaultBranchName) {
+          // Ensure parents on the default branch also stay on lane 0
+          if (activeLanes.length === 0) {
+            activeLanes.push(null);
+          }
+          parentLane = 0;
+          activeLanes[0] = parentSha;
         } else {
           // Check if parent is already reserved in a lane
           const reservedParentLane = activeLanes.indexOf(parentSha);
@@ -188,7 +212,7 @@ const GitGraph: React.FC<GitGraphProps> = ({ data, owner, repo }) => {
       }
     });
 
-    const maxLane = Math.max(0, ...Array.from(positions.values()).map(p => p.lane));
+    const maxLane = Math.max(0, ...Array.from(positions.values()).map((p) => p.lane));
     return { commitPositions: positions, edges, maxLane };
   }, [data.commits, data.branches]);
 
@@ -200,7 +224,7 @@ const GitGraph: React.FC<GitGraphProps> = ({ data, owner, repo }) => {
     isDefault ? DEFAULT_BRANCH_COLOR : BRANCH_COLORS[branchIndex % BRANCH_COLORS.length];
 
   // Generate SVG path for an edge
-  const renderEdgePath = (edge: typeof edges[0]) => {
+  const renderEdgePath = (edge: (typeof edges)[0]) => {
     const x1 = getX(edge.fromLane);
     const y1 = getY(edge.fromRow);
     const x2 = getX(edge.toLane);
@@ -239,7 +263,11 @@ const GitGraph: React.FC<GitGraphProps> = ({ data, owner, repo }) => {
     if (diffDays === 1) return 'Yesterday';
     if (diffDays < 7) return `${diffDays}d ago`;
     if (diffDays < 30) return `${Math.floor(diffDays / 7)}w ago`;
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined });
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined,
+    });
   };
 
   return (
@@ -308,8 +336,8 @@ const GitGraph: React.FC<GitGraphProps> = ({ data, owner, repo }) => {
               const x = getX(pos.lane);
               const y = getY(pos.row);
               const isHead = data.branches.some((b) => b.headSha === commit.sha);
-              const isOnDefaultBranch = commit.branches.some(branchName => {
-                const branch = data.branches.find(b => b.name === branchName);
+              const isOnDefaultBranch = commit.branches.some((branchName) => {
+                const branch = data.branches.find((b) => b.name === branchName);
                 return branch?.isDefault;
               });
               const isHovered = hoveredCommit === commit.sha;
@@ -364,8 +392,8 @@ const GitGraph: React.FC<GitGraphProps> = ({ data, owner, repo }) => {
               const isSelected = selectedCommit?.sha === commit.sha;
               const isHovered = hoveredCommit === commit.sha;
               const isHead = data.branches.some((b) => b.headSha === commit.sha);
-              const isOnDefaultBranch = commit.branches.some(branchName => {
-                const branch = data.branches.find(b => b.name === branchName);
+              const isOnDefaultBranch = commit.branches.some((branchName) => {
+                const branch = data.branches.find((b) => b.name === branchName);
                 return branch?.isDefault;
               });
 
@@ -420,8 +448,8 @@ const GitGraph: React.FC<GitGraphProps> = ({ data, owner, repo }) => {
 
                   <div className="flex items-center gap-1.5 flex-shrink-0">
                     {commit.branches.slice(0, 2).map((branch) => {
-                      const branchObj = data.branches.find(b => b.name === branch);
-                      const branchIdx = data.branches.findIndex(b => b.name === branch);
+                      const branchObj = data.branches.find((b) => b.name === branch);
+                      const branchIdx = data.branches.findIndex((b) => b.name === branch);
                       const color = branchObj ? getColor(branchIdx, branchObj.isDefault) : getColor(0, false);
                       return (
                         <span
@@ -490,8 +518,8 @@ const GitGraph: React.FC<GitGraphProps> = ({ data, owner, repo }) => {
                 </span>
                 <div className="flex items-center gap-1 flex-wrap">
                   {selectedCommit.branches.map((branch) => {
-                    const branchObj = data.branches.find(b => b.name === branch);
-                    const branchIdx = data.branches.findIndex(b => b.name === branch);
+                    const branchObj = data.branches.find((b) => b.name === branch);
+                    const branchIdx = data.branches.findIndex((b) => b.name === branch);
                     const color = branchObj ? getColor(branchIdx, branchObj.isDefault) : getColor(0, false);
                     return (
                       <span
